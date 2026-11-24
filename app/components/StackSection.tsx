@@ -45,7 +45,7 @@ export default function StackSection({ children }: { children: React.ReactNode }
 
   return (
     <section id="stack" tabIndex={-1} className="stack">
-      <div className="wrap stack-head reveal">
+      <div className="wrap stack-head">
         <div>
           <p className="mono small muted">[04] stack</p>
           <h2 className="h2">What I work with.</h2>
@@ -56,7 +56,7 @@ export default function StackSection({ children }: { children: React.ReactNode }
         </div>
       </div>
 
-      <div className="wrap sx reveal">
+      <div className="wrap sx">
         <div className="sx-layers" role="tablist" aria-orientation="vertical" aria-label="Stack layers" onKeyDown={onKey}>
           {LAYERS.map((l, i) => (
             <button

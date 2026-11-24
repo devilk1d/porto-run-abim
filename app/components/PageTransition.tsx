@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { scrollToY } from "./scroll";
+import { scrollToY, scrollToTarget, setProgrammaticScrolling } from "./scroll";
 
 /* Pixel-wipe page transition (the site's own look: the 28px pixel grid of the ABIM mark).
  *
@@ -39,30 +39,89 @@ export function PageTransitionProvider({ children }: { children: React.ReactNode
   useEffect(() => clear, []);
 
   // scroll: false because Next scrolls pages that have several top-level elements to their last one; we reset to the top ourselves.
-  const push = useCallback((href: string) => { router.push(href, { scroll: false }); setTimeout(() => scrollToY(0, true), 60); }, [router]);
+  const push = useCallback((href: string) => {
+    router.push(href, { scroll: false });
+    if (!href.includes("#")) {
+      setTimeout(() => scrollToY(0, true), 40);
+    } else {
+      const h = href.slice(href.indexOf("#"));
+      scrollToTarget(h, true);
+    }
+  }, [router]);
 
   const reveal = useCallback(() => {
+    const hash = target.current?.includes("#") ? target.current.slice(target.current.indexOf("#")) : null;
     target.current = null;
     clear();
-    scrollToY(0, true); // new page starts at the top, hidden behind the squares
+    if (!hash) {
+      scrollToY(0, true); // new page starts at the top, hidden behind the squares
+    } else {
+      scrollToTarget(hash, true);
+    }
     const wait = Math.max(120, HOLD_MS - (performance.now() - coveredAt.current)); // keep the label up long enough to read
+    if (hash) {
+      setTimeout(() => scrollToTarget(hash, true), 60);
+    }
     after(wait, () => {
+      if (hash) {
+        scrollToTarget(hash, true);
+      }
       setPhase("out");
       const total = (grid.cols + grid.rows) * STEP + CELL_MS + 80;
-      after(total, () => setPhase("idle"));
+      after(total, () => {
+        setPhase("idle");
+        if (hash) {
+          scrollToTarget(hash, true);
+        }
+      });
     });
   }, [grid.cols, grid.rows]);
 
   const go = useCallback((href: string, lbl?: string) => {
     if (phase !== "idle") return;
-    if (pathOf(href) === pathname) { router.push(href); return; }
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) { push(href); return; }
+
+    // Smart return to home section if href is "/" or without hash
+    let targetHref = href;
+    if (targetHref === "/" && typeof window !== "undefined") {
+      const last = sessionStorage.getItem("lastSection");
+      if (last && last !== "#top" && last !== "/") {
+        targetHref = "/" + (last.startsWith("#") ? last : "#" + last);
+      } else if (pathname === "/all-certificates" || pathname === "/certificates") {
+        targetHref = "/#certificates";
+      } else if (pathname === "/all-projects" || pathname === "/projects") {
+        targetHref = "/#projects";
+      }
+    }
+
+    // Save lastSection before leaving home page
+    if (pathname === "/" && typeof window !== "undefined") {
+      const clean = pathOf(targetHref);
+      if (clean === "/all-certificates" || clean === "/certificates") {
+        sessionStorage.setItem("lastSection", window.location.hash || "#certificates");
+      } else if (clean === "/all-projects" || clean === "/projects") {
+        sessionStorage.setItem("lastSection", window.location.hash || "#projects");
+      } else if (window.location.hash) {
+        sessionStorage.setItem("lastSection", window.location.hash);
+      }
+    }
+
+    if (pathOf(targetHref) === pathname) {
+      if (targetHref.includes("#")) {
+        const h = targetHref.slice(targetHref.indexOf("#"));
+        scrollToTarget(h);
+      } else {
+        router.push(targetHref);
+      }
+      return;
+    }
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) { push(targetHref); return; }
+    setProgrammaticScrolling(1200);
     const cols = Math.ceil(innerWidth / CELL), rows = Math.ceil(innerHeight / CELL);
     setGrid({ cols, rows });
-    setLabel(lbl ?? pathOf(href).replace("/", "") ?? "");
+    setLabel(lbl ?? pathOf(targetHref).replace("/", "") ?? "");
     setPhase("in");
-    target.current = href;
-    after((cols + rows) * STEP + CELL_MS + 60, () => { coveredAt.current = performance.now(); push(href); });
+    target.current = targetHref;
+    after((cols + rows) * STEP + CELL_MS + 60, () => { coveredAt.current = performance.now(); push(targetHref); });
     after(SAFETY_MS, () => { if (target.current) reveal(); }); // never leave the screen covered
   }, [phase, pathname, router, push, reveal]);
 

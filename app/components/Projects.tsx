@@ -188,16 +188,16 @@ export default function Projects() {
   const fill = useTransform(scrollYProgress, (v) => 0.04 + v * 0.96);
 
   return (
-    <section ref={outer} id="work" tabIndex={-1} className={`projects-pin${pinned ? " is-pinned" : ""}`}
+    <section ref={outer} id="projects" tabIndex={-1} className={`projects-pin${pinned ? " is-pinned" : ""}`}
       style={pinned ? { height: `calc(100vh + ${distance * 1.15}px)` } : undefined}
-      aria-roledescription="carousel" aria-label="Selected work">
+      aria-roledescription="carousel" aria-label="Selected projects">
       <div className="pin-sticky">
         <WorkBackdrop p={scrollYProgress} />
         <div className="projects wrap">
           <div className="projects-head">
             <div>
-              <p className="mono small muted">[05] selected work</p>
-              <h2 className="h2">Selected work.</h2>
+              <p className="mono small muted">[05] selected projects</p>
+              <h2 className="h2">Selected projects.</h2>
               <p className="sub">Web apps, ML research and hardware — from thesis to side project.</p>
             </div>
             <p className="counter" aria-hidden="true">
@@ -225,7 +225,7 @@ export default function Projects() {
                 onFocusSlide={() => { if (pinned && Math.round(s.get()) !== i) go(i, true); }} />
             ))}
             <div className="cta-slide" role="group" aria-roledescription="slide" aria-label="All projects">
-              <TransitionLink href="/projects" label="projects" className="cta-link">
+              <TransitionLink href="/all-projects" label="all projects" className="cta-link">
                 <span className="cta-k mono small">[{pad(N)}] projects, one page</span>
                 <span className="cta-t">View all<br />projects</span>
                 <span className="cta-go"><span className="btn accent">Open the full list <span aria-hidden="true">→</span></span></span>
@@ -245,9 +245,12 @@ export default function Projects() {
 
       {/* closedby="any": click outside closes where supported; Esc closes everywhere. data-lenis-prevent: wheel inside scrolls the panel, not the page. */}
       <dialog ref={dialog} className="case" aria-labelledby="case-title" data-lenis-prevent {...{ closedby: "any" }}>
-        <div className="case-head">
-          <span className="mono small muted">{p.file}</span>
-          <form method="dialog"><button className="pill mono small" autoFocus>close <span className="muted">esc</span></button></form>
+        <div className="case-head mono small">
+          <div className="case-head-dots" aria-hidden="true">
+            <i /><i /><i />
+          </div>
+          <span className="case-head-title">{p.file}</span>
+          <form method="dialog"><button type="submit" className="pill mono small" autoFocus>close <span className="muted">esc</span></button></form>
         </div>
         <div className="case-body" key={open}>
           <p className="mono small muted">projects / {pad(open + 1)}</p>
@@ -264,9 +267,9 @@ export default function Projects() {
           <p>{p.built}</p>
         </div>
         <div className="case-foot">
-          <a className="btn dark" href={GITHUB} target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+          <a className="btn dark small-btn" href={GITHUB} target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a>
           {/* shortcut: only Next Lap has a known live URL; add the others when they exist */}
-          {open === 0 && <a className="btn ghost" href="https://nextlap.live" target="_blank" rel="noreferrer">Visit live <span aria-hidden="true">↗</span></a>}
+          {open === 0 && <a className="btn ghost small-btn" href="https://nextlap.live" target="_blank" rel="noreferrer">Visit live <span aria-hidden="true">↗</span></a>}
           <button type="button" className="next mono small" onClick={() => setOpen((open + 1) % N)}>
             next: {projects[(open + 1) % N].title} <span aria-hidden="true">→</span>
           </button>

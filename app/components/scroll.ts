@@ -4,13 +4,33 @@ import { useMotionValue } from "motion/react";
 import Lenis from "lenis";
 
 // Pinned (scroll-jacked) sections only where there is room and motion is welcome; elsewhere they flow normally.
-const PIN_QUERY = "(min-width: 961px) and (min-height: 640px) and (prefers-reduced-motion: no-preference)";
+const PIN_QUERY = "(min-width: 961px) and (min-height: 680px) and (prefers-reduced-motion: no-preference)";
 
 let lenis: Lenis | null = null;
+let isProgrammatic = false;
+let programmaticTimer: number | null = null;
+
+export function isProgrammaticScrolling(): boolean {
+  return isProgrammatic;
+}
+
+export function setProgrammaticScrolling(durationMs = 1200) {
+  isProgrammatic = true;
+  if (programmaticTimer !== null) {
+    clearTimeout(programmaticTimer);
+  }
+  programmaticTimer = window.setTimeout(() => {
+    isProgrammatic = false;
+    programmaticTimer = null;
+  }, durationMs);
+}
 
 /** Smooth scrolling (Lenis). Skipped for reduced motion. Mounted once from the layout. */
 export function SmoothScroll() {
   useEffect(() => {
+    if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     lenis = new Lenis({ autoRaf: true, duration: 1.35, gestureOrientation: "both", anchors: { offset: -88 } });
     return () => { lenis?.destroy(); lenis = null; };
@@ -24,21 +44,26 @@ export function scrollToY(y: number, instant = false) {
 }
 
 /** Accurately scroll to a target section by ID or selector.
- *  Handles pinned sections (top = 0) vs normal sections (offset = 80px)
- *  and temporarily disables sticky speed brakes during smooth programmatic scrolls. */
+ *  Handles pinned sections (top = 0) vs normal sections (offset = 80px). */
 export function scrollToTarget(target: string, instant = false) {
-  if (target === "#top" || target === "top") {
+  if (target === "#top" || target === "top" || target === "/") {
     scrollToY(0, instant);
     return;
   }
-  const el = document.querySelector(target) as HTMLElement | null;
+  const selector = target.startsWith("#") ? target : `#${target}`;
+  const el = document.querySelector(selector) as HTMLElement | null;
   if (!el) return;
+
+  if (lenis) {
+    lenis.resize();
+  }
 
   const isPinned = el.classList.contains("is-pinned") ||
                    el.classList.contains("about-pin") ||
                    el.classList.contains("projects-pin") ||
                    el.id === "about" ||
                    el.id === "principles" ||
+                   el.id === "projects" ||
                    el.id === "work";
 
   // Position relative to document
@@ -51,49 +76,28 @@ export function scrollToTarget(target: string, instant = false) {
   }
 
   if (instant) {
+    setProgrammaticScrolling(600);
     scrollToY(Math.max(0, top), true);
+    window.scrollTo({ top: Math.max(0, top), behavior: "instant" });
     return;
   }
 
-  // Smooth scroll: temporarily collapse stack-scroll heights in pinned sections
-  // so the camera glides smoothly across the natural flow of sections without pausing/holding
-  document.documentElement.classList.add("is-bypassing-stacks");
-  if (lenis) lenis.resize();
-
-  // Measure target in this collapsed document
-  const collapsedRect = el.getBoundingClientRect();
-  let collapsedTop = collapsedRect.top + window.scrollY;
-  if (!isPinned) {
-    collapsedTop = Math.max(0, collapsedTop - 80);
-  }
-
-  const cleanup = () => {
-    document.documentElement.classList.remove("is-bypassing-stacks");
-    if (lenis) {
-      lenis.resize();
-      const finalRect = el.getBoundingClientRect();
-      let expandedTop = finalRect.top + window.scrollY;
-      if (!isPinned) expandedTop = Math.max(0, expandedTop - 80);
-      lenis.scrollTo(Math.max(0, expandedTop), { immediate: true });
-    } else {
-      const finalRect = el.getBoundingClientRect();
-      let expandedTop = finalRect.top + window.scrollY;
-      if (!isPinned) expandedTop = Math.max(0, expandedTop - 80);
-      window.scrollTo(0, Math.max(0, expandedTop));
-    }
-  };
+  const dist = Math.abs(top - window.scrollY);
+  const duration = Math.min(2.6, Math.max(1.4, 1.2 + dist / 3600));
+  setProgrammaticScrolling(Math.round(duration * 1000) + 150);
 
   if (lenis) {
-    // Longer trips take longer (1.6–3.2s) and ease in and out, so the glide starts and lands softly.
-    const dist = Math.abs(collapsedTop - window.scrollY);
-    lenis.scrollTo(Math.max(0, collapsedTop), {
-      duration: Math.min(3.2, 1.6 + dist / 3500),
-      easing: (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2),
-      onComplete: cleanup,
+    // Sine ease-in-out: peak velocity in the middle is only ~1.57x (vs 3.0x for cubic).
+    // This eliminates the violent acceleration through intermediate sections,
+    // making sections 1, 2, and 6 feel calm, steady, and natural without looking jumpy.
+    const easing = (t: number) => 0.5 * (1 - Math.cos(Math.PI * t));
+
+    lenis.scrollTo(Math.max(0, top), {
+      duration,
+      easing,
     });
   } else {
-    window.scrollTo({ top: Math.max(0, collapsedTop), behavior: "smooth" });
-    setTimeout(cleanup, 1800);
+    window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
   }
 }
 

@@ -1,21 +1,33 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import { ContactTrigger } from "./ContactDialog";
 import { Magnetic, NavLinks } from "./Extras";
 import { scrollToTarget } from "./scroll";
+import { usePageTransition } from "./PageTransition";
 import { siGithub } from "simple-icons";
 import { GITHUB, LINKEDIN } from "../data";
 
+export const DEFAULT_NAV_LINKS: [string, string][] = [
+  ["About", "#about"],
+  ["Experience", "#experience"],
+  ["Stack", "#stack"],
+  ["Projects", "#projects"],
+  ["Certificates", "#certificates"],
+  ["Process", "#process"],
+  ["Contact", "#contact"],
+];
+
 interface NavbarProps {
-  links: [string, string][];
+  links?: [string, string][];
 }
 
 // Section numbers shown in the collapsed menu; the entries themselves come from the navbar's own links.
-const SECTION_NUM: Record<string, string> = { "#about": "02", "#experience": "03", "#stack": "04", "#work": "05", "#certificates": "06", "#process": "07", "#contact": "08" };
+const SECTION_NUM: Record<string, string> = { "#about": "02", "#experience": "03", "#stack": "04", "#projects": "05", "#work": "05", "#certificates": "06", "#process": "07", "#contact": "08" };
 
 const LINKEDIN_PATH = "M4.98 3.5a2.5 2.5 0 1 1-.02 5 2.5 2.5 0 0 1 .02-5ZM3 9.75h4V21H3V9.75Zm6.5 0h3.8v1.54h.05c.53-1 1.83-2.06 3.77-2.06 4.03 0 4.78 2.65 4.78 6.1V21h-4v-5.07c0-1.21-.02-2.77-1.69-2.77-1.69 0-1.95 1.32-1.95 2.68V21h-4V9.75Z";
 
@@ -104,14 +116,25 @@ const overlayVariants = (count: number) => ({
   },
 });
 
-export default function Navbar({ links }: NavbarProps) {
+export default function Navbar({ links = DEFAULT_NAV_LINKS }: NavbarProps) {
+  const pathname = usePathname();
+  const isHome = pathname === "/";
+  const { go } = usePageTransition();
+
   const [isScrolled, setIsScrolled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const items = links.map(([label, href]) => ({ num: SECTION_NUM[href] ?? "", label, href }));
   const slice = sliceVariants(items.length);
   const overlay = overlayVariants(items.length);
 
-  // Detect when user reaches section 1 "how I think" (#statement)
+  // Active link indicator for subpages
+  const activeHref = (pathname === "/all-certificates" || pathname === "/certificates")
+    ? "#certificates"
+    : (pathname === "/all-projects" || pathname === "/projects")
+    ? "#projects"
+    : undefined;
+
+  // Detect when user reaches section 1 "how I think" (#statement) or scrolled down
   useEffect(() => {
     const checkScroll = () => {
       const statementEl = document.getElementById("statement");
@@ -120,8 +143,8 @@ export default function Navbar({ links }: NavbarProps) {
         // Reached when section 1 header gets close to the top of viewport
         setIsScrolled(rect.top <= 120);
       } else {
-        // Fallback: past hero height
-        setIsScrolled(window.scrollY >= 700);
+        // Fallback for subpages: past top header
+        setIsScrolled(window.scrollY >= 500);
       }
     };
 
@@ -153,9 +176,48 @@ export default function Navbar({ links }: NavbarProps) {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isOpen]);
 
-  // Teleport behind solid slices and trigger peel-away exit animation
-  const handleNavigate = (href: string) => {
-    scrollToTarget(href, true);
+  const handleLogoClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isHome) {
+      if (typeof window !== "undefined") {
+        window.history.replaceState(window.history.state, "", window.location.pathname);
+      }
+      sessionStorage.setItem("lastSection", "#top");
+      scrollToTarget("#top", false);
+    } else {
+      const returnTarget = (pathname === "/all-certificates" || pathname === "/certificates")
+        ? "#certificates"
+        : (pathname === "/all-projects" || pathname === "/projects")
+        ? "#projects"
+        : "#top";
+      go("/" + (returnTarget.startsWith("#") ? returnTarget : "#" + returnTarget), "home");
+    }
+  };
+
+  const handleNavigate = (href: string, instant = false) => {
+    if (isHome) {
+      if (href.startsWith("#")) {
+        const hash = href === "#top" ? "" : href;
+        if (typeof window !== "undefined") {
+          window.history.replaceState(window.history.state, "", hash ? `${window.location.pathname}${hash}` : window.location.pathname);
+        }
+        sessionStorage.setItem("lastSection", href);
+      }
+      scrollToTarget(href, instant);
+    } else {
+      const isCertSubpage = pathname === "/all-certificates" || pathname === "/certificates";
+      const isProjSubpage = pathname === "/all-projects" || pathname === "/projects";
+
+      if ((isCertSubpage && href === "#certificates") ||
+          (isProjSubpage && (href === "#projects" || href === "#work"))) {
+        window.scrollTo({ top: 0, behavior: instant ? "instant" : "smooth" });
+      } else if (href === "#top") {
+        go("/#top", "home");
+      } else {
+        go("/" + href, "home");
+      }
+    }
     setIsOpen(false);
   };
 
@@ -165,7 +227,7 @@ export default function Navbar({ links }: NavbarProps) {
 
   return (
     <>
-      {/* 1. Landing page normal top bar (visible only before reaching Section 1) */}
+      {/* 1. Normal top bar */}
       <header
         className={`nav ${isScrolled ? "nav-hidden" : ""}`}
         aria-label="Main navigation"
@@ -173,16 +235,12 @@ export default function Navbar({ links }: NavbarProps) {
       >
         <a
           className="logo"
-          href="#top"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            scrollToTarget("#top");
-          }}
+          href={isHome ? "#top" : "/"}
+          onClick={handleLogoClick}
         >
           <Logo />
         </a>
-        <NavLinks links={links} onNavigate={(h) => scrollToTarget(h)} />
+        <NavLinks links={links} activeHref={activeHref} onNavigate={(h) => handleNavigate(h, false)} />
         <i className="nav-progress" aria-hidden="true" />
         <ThemeToggle />
         <Socials />
@@ -227,7 +285,7 @@ export default function Navbar({ links }: NavbarProps) {
               <button
                 type="button"
                 className="logo"
-                onClick={() => handleNavigate("#top")}
+                onClick={() => handleNavigate("#top", true)}
                 style={{ cursor: "pointer" }}
               >
                 <Logo />
@@ -268,7 +326,7 @@ export default function Navbar({ links }: NavbarProps) {
                     <button
                       type="button"
                       className="fullscreen-menu-link"
-                      onClick={() => handleNavigate(item.href)}
+                      onClick={() => handleNavigate(item.href, true)}
                     >
                       <div className="link-right">
                         <span className="link-index mono">[{item.num}]</span>

@@ -27,7 +27,7 @@ export function CertificateCard({ c, i }: { c: (typeof certificates)[number]; i:
 
 export default function Certificates() {
   return (
-    <section id="certificates" tabIndex={-1} className="certs wrap reveal">
+    <section id="certificates" tabIndex={-1} className="certs wrap">
       <div className="stack-head">
         <div>
           <p className="mono small muted">[06] certificates</p>
@@ -46,7 +46,7 @@ export default function Certificates() {
       </ol>
 
       <div className="cert-more">
-        <TransitionLink href="/certificates" label="certificates" className="cert-all">
+        <TransitionLink href="/all-certificates" label="all certificates" className="cert-all">
           <span className="cert-all-n mono">{String(certificates.length).padStart(2, "0")}</span>
           <span className="cert-all-t">View all certificates</span>
           <span className="cert-all-go" aria-hidden="true">→</span>

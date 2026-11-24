@@ -49,13 +49,13 @@ export function Magnetic({ children, strength = 0.3 }: { children: React.ReactNo
 
 /** Section links with live scrollspy (IntersectionObserver, so it follows smooth scrolling as it happens).
  *  The sliding pill is CSS anchor positioning; browsers without it get the same slide from measured --pill-x/--pill-w. */
-export function NavLinks({ links, onNavigate }: { links: [string, string][]; onNavigate?: (href: string) => void }) {
+export function NavLinks({ links, onNavigate, activeHref }: { links: [string, string][]; onNavigate?: (href: string) => void; activeHref?: string }) {
   const nav = useRef<HTMLElement>(null);
   useEffect(() => {
     const el = nav.current!;
     const anchors = [...el.querySelectorAll("a")];
     const native = CSS.supports("position-anchor: --a");
-    let current: string | null = null;
+    let current: string | null = activeHref ? activeHref.replace(/^#/, "") : null;
     const place = () => {
       const a = anchors.find((x) => x.getAttribute("href") === `#${current}`);
       if (native || !a) return;
@@ -69,6 +69,13 @@ export function NavLinks({ links, onNavigate }: { links: [string, string][]; onN
       });
       place();
     };
+
+    if (activeHref !== undefined) {
+      mark(activeHref.replace(/^#/, ""));
+      addEventListener("resize", place);
+      return () => removeEventListener("resize", place);
+    }
+
     const visible = new Map<string, number>();
     const io = new IntersectionObserver((es) => {
       es.forEach((e) => (e.isIntersecting ? visible.set(e.target.id, e.intersectionRatio) : visible.delete(e.target.id)));
@@ -79,7 +86,7 @@ export function NavLinks({ links, onNavigate }: { links: [string, string][]; onN
     links.forEach(([, h]) => { const s = document.querySelector(h); if (s) io.observe(s); });
     addEventListener("resize", place);
     return () => { io.disconnect(); removeEventListener("resize", place); };
-  }, [links]);
+  }, [links, activeHref]);
   return (
     <nav ref={nav} aria-label="Sections">
       {links.map(([l, h]) => (

@@ -40,7 +40,7 @@ export default function Process() {
   }
 
   return (
-    <section id="process" tabIndex={-1} className="process wrap reveal">
+    <section id="process" tabIndex={-1} className="process wrap">
       <div className="stack-head">
         <div>
           <p className="mono small muted">[07] process</p>

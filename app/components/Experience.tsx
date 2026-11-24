@@ -14,7 +14,7 @@ export default function Experience() {
   const last = timeline.length - 1;
   return (
     <section id="experience" tabIndex={-1} className="xp paper2">
-      <div className="wrap xp-grid reveal">
+      <div className="wrap xp-grid">
         <div className="xp-side">
           <p className="mono small muted">[03] experience</p>
           <h2 className="h2">Where I&apos;ve<br />been so far.</h2>

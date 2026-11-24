@@ -10,8 +10,8 @@ export default function Statement() {
   const [lit, setLit] = useState(0);
   // The block starts small and grows to full size as the section scrolls into view (spring-smoothed).
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "start 25%"] });
-  const grow = useSpring(scrollYProgress, { stiffness: 110, damping: 26, mass: 0.5 });
-  const scale = useTransform(grow, [0, 1], [0.72, 1]);
+  const grow = useSpring(scrollYProgress, { stiffness: 220, damping: 28, mass: 0.2 });
+  const scale = useTransform(grow, [0, 1], [0.88, 1]);
   const [still, setStill] = useState(false);
 
   useEffect(() => {

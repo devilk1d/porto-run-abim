@@ -29,7 +29,7 @@ export default function Contact({ children }: { children: React.ReactNode }) {
     <section ref={section} id="contact" tabIndex={-1} className="contact ct">
       <ContactScene progress={scrollYProgress} />
       {children}
-      <div className="wrap contact-grid reveal">
+      <div className="wrap contact-grid">
         <div className="contact-copy">
           <p className="mono small muted">[08] contact</p>
           <h2 className="contact-h">Let&apos;s build<br />something <span className="accent-text">that runs.</span></h2>

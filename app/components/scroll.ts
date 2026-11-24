@@ -6,6 +6,8 @@ import Lenis from "lenis";
 // Pinned (scroll-jacked) sections only where there is room and motion is welcome; elsewhere they flow normally.
 const PIN_QUERY = "(min-width: 961px) and (min-height: 680px) and (prefers-reduced-motion: no-preference)";
 
+const NAV_CLEAR = 92; // where a section's content starts: below the navbar pill, which ends at ~76px
+const EDGE_STRIP = 28; // height of the decorative edge strips that hang over neighbouring sections
 let lenis: Lenis | null = null;
 let isProgrammatic = false;
 let programmaticTimer: number | null = null;
@@ -70,9 +72,18 @@ export function scrollToTarget(target: string, instant = false) {
   const rect = el.getBoundingClientRect();
   let top = rect.top + window.scrollY;
 
-  // Pinned sections must land at top = 0 so their sticky containers engage properly without gaps
+  // Pinned sections must land at top = 0 so their sticky containers engage properly without gaps.
+  // Other sections: "want" is where the section's top edge should sit in the viewport (negative = above it).
+  //  - shorter than the screen: centred;  - taller: its heading lands just below the navbar pill.
+  // A partial sliver of the previous section's edge strip (the lime teeth are ~26px) looks like a glitch, so never leave less than a full strip showing.
   if (!isPinned) {
-    top = Math.max(0, top - 80);
+    const vh = window.innerHeight;
+    // padding is stable; a heading's position is not (reveal animations shift it), so it is only the fallback for sections with no padding
+    const pad = parseFloat(getComputedStyle(el).paddingTop) || 0;
+    const h = el.querySelector("h1, h2");
+    let want = rect.height < vh ? (vh - rect.height) / 2 : NAV_CLEAR - (pad || (h ? h.getBoundingClientRect().top - rect.top : 0));
+    if (want > -EDGE_STRIP && want < EDGE_STRIP) want = -EDGE_STRIP;
+    top = Math.max(0, Math.round(top - want));
   }
 
   if (instant) {

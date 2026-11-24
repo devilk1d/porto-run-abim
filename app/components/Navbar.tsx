@@ -12,14 +12,12 @@ import { usePageTransition } from "./PageTransition";
 import { siGithub } from "simple-icons";
 import { GITHUB, LINKEDIN } from "../data";
 
-export const DEFAULT_NAV_LINKS: [string, string][] = [
+const DEFAULT_NAV_LINKS: [string, string][] = [
   ["About", "#about"],
   ["Experience", "#experience"],
   ["Stack", "#stack"],
   ["Projects", "#projects"],
   ["Certificates", "#certificates"],
-  ["Process", "#process"],
-  ["Contact", "#contact"],
 ];
 
 interface NavbarProps {
@@ -128,9 +126,9 @@ export default function Navbar({ links = DEFAULT_NAV_LINKS }: NavbarProps) {
   const overlay = overlayVariants(items.length);
 
   // Active link indicator for subpages
-  const activeHref = (pathname === "/all-certificates" || pathname === "/certificates")
+  const activeHref = pathname === "/all-certificates"
     ? "#certificates"
-    : (pathname === "/all-projects" || pathname === "/projects")
+    : pathname === "/all-projects"
     ? "#projects"
     : undefined;
 
@@ -186,9 +184,9 @@ export default function Navbar({ links = DEFAULT_NAV_LINKS }: NavbarProps) {
       sessionStorage.setItem("lastSection", "#top");
       scrollToTarget("#top", false);
     } else {
-      const returnTarget = (pathname === "/all-certificates" || pathname === "/certificates")
+      const returnTarget = pathname === "/all-certificates"
         ? "#certificates"
-        : (pathname === "/all-projects" || pathname === "/projects")
+        : pathname === "/all-projects"
         ? "#projects"
         : "#top";
       go("/" + (returnTarget.startsWith("#") ? returnTarget : "#" + returnTarget), "home");
@@ -206,8 +204,8 @@ export default function Navbar({ links = DEFAULT_NAV_LINKS }: NavbarProps) {
       }
       scrollToTarget(href, instant);
     } else {
-      const isCertSubpage = pathname === "/all-certificates" || pathname === "/certificates";
-      const isProjSubpage = pathname === "/all-projects" || pathname === "/projects";
+      const isCertSubpage = pathname === "/all-certificates";
+      const isProjSubpage = pathname === "/all-projects";
 
       if ((isCertSubpage && href === "#certificates") ||
           (isProjSubpage && (href === "#projects" || href === "#work"))) {

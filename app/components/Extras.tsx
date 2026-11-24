@@ -1,28 +1,20 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { motion, useMotionValue, useSpring } from "motion/react";
 import { scrollToTarget } from "./scroll";
 
-/** Live time in the visitor's own timezone (from the browser; no location permission needed).
- *  Empty on the server, so there is no hydration mismatch. */
-export function LocalTime() {
-  const [info, setInfo] = useState<{ city: string; time: string; utc: string } | null>(null);
-  useEffect(() => {
-    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone; // e.g. "Asia/Jakarta"
-    const city = (zone.split("/").pop() ?? zone).replaceAll("_", " ");
-    const hm = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit" });
-    const off = new Intl.DateTimeFormat("en-US", { timeZoneName: "shortOffset" });
-    const tick = () => {
-      const now = new Date();
-      const utc = off.formatToParts(now).find((p) => p.type === "timeZoneName")?.value.replace("GMT", "UTC") ?? "";
-      setInfo({ city, time: hm.format(now), utc });
-    };
-    tick();
-    const id = setInterval(tick, 15000);
-    return () => clearInterval(id);
-  }, []);
-  if (!info) return <>&nbsp;</>;
-  return <>{info.city} · <time>{info.time}</time> · {info.utc === "UTC" ? "UTC+0" : info.utc}</>;
+/** In-page link that scrolls with the same animated, pin-aware scroll as the navbar (a plain #hash link jumps). */
+export function ScrollLink({ href, className, children }: { href: string; className?: string; children: React.ReactNode }) {
+  return (
+    <a className={className} href={href} onClick={(e) => {
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; // let "open in new tab" through
+      e.preventDefault();
+      e.stopPropagation(); // Lenis also listens for #links and would scroll with its own, near-instant easing
+      history.replaceState(history.state, "", `${location.pathname}${href}`);
+      sessionStorage.setItem("lastSection", href);
+      scrollToTarget(href);
+    }}>{children}</a>
+  );
 }
 
 /** Element drifts toward the pointer while hovered (fine pointers only, no reduced motion). */

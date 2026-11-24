@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Navbar from "../components/Navbar";
 import { CertificateCard } from "../components/Certificates";
-import { TransitionLink } from "../components/PageTransition";
+import BackHome from "../components/BackHome";
+import { ContactBlock, SiteFooter } from "../components/SiteEnd";
 import { certificates } from "../data";
 
 export const metadata: Metadata = {
@@ -32,8 +33,10 @@ function Seal() {
 
 export default function AllCertificates() {
   return (
+    <>
     <div className="cp">
       <Navbar />
+      <BackHome href="/#certificates" />
 
       <main className="wrap cp-main">
         <header className="cp-hero">
@@ -64,12 +67,11 @@ export default function AllCertificates() {
             </section>
           ))}
         </div>
-
-        <div className="ap-end">
-          <p className="mono small muted">// end of the ledger</p>
-          <TransitionLink href="/#certificates" label="home" className="btn accent">Back to the home page <span aria-hidden="true">→</span></TransitionLink>
-        </div>
       </main>
     </div>
+
+    <ContactBlock />
+    <SiteFooter />
+    </>
   );
 }

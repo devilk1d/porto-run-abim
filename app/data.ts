@@ -5,10 +5,10 @@ export const LINKEDIN = "https://www.linkedin.com/";
 export const EMAIL = "hello@abim.run";
 
 export const about = [
-  { k: "01 / WHO", p: "I'm Abim — a full-stack developer working across web, mobile and machine learning. I study at Management and Science University in Kuala Lumpur, and I'm originally from Indonesia." },
-  { k: "02 / HOW", p: "I learn by building. Every project starts with a real question and ends with something running: a dashboard, an API, or a model someone can actually use." },
-  { k: "03 / RANGE", p: "F1 lap-time prediction, churn analytics, an IoT sensor dashboard and this site. Different problems, same habit — make it work, then make it clear." },
-  { k: "04 / STACK", p: "Mostly TypeScript, Next.js and React on the web, Python for data and ML, and SQL underneath everything. I care about clean interfaces and code that holds up." },
+  { k: "01 / WHO", p: "I'm Abim — a full-stack developer working across web, mobile and machine learning. I study at Management and Science University in Kuala Lumpur, and I'm originally from Indonesia.", hl: ["full-stack developer", "web, mobile and machine learning", "Indonesia"] },
+  { k: "02 / HOW", p: "I learn by building. Every project starts with a real question and ends with something running: a dashboard, an API, or a model someone can actually use.", hl: ["I learn by building.", "something running"] },
+  { k: "03 / RANGE", p: "F1 lap-time prediction, churn analytics, an IoT sensor dashboard and this site. Different problems, same habit — make it work, then make it clear.", hl: ["F1 lap-time prediction", "churn analytics", "IoT sensor dashboard", "make it work, then make it clear"] },
+  { k: "04 / STACK", p: "Mostly TypeScript, Next.js and React on the web, Python for data and ML, and SQL underneath everything. I care about clean interfaces and code that holds up.", hl: ["TypeScript, Next.js and React", "Python", "SQL", "clean interfaces"] },
 ];
 
 export const timeline = [
@@ -19,10 +19,11 @@ export const timeline = [
 ];
 
 export const stack = [
-  { k: "01 — WEB", items: ["TypeScript", "Next.js", "React", "Tailwind CSS", "HTML & CSS"], cap: "where it renders" },
-  { k: "02 — BACKEND & DATA", items: ["Node.js", "Python", "SQL", "PostgreSQL", "Supabase"], cap: "where it lives" },
-  { k: "03 — MACHINE LEARNING", items: ["scikit-learn", "LightGBM", "LSTM / GRU", "SHAP", "pandas"], cap: "where it learns" },
-  { k: "04 — TOOLS & LANGUAGES", items: ["Git & GitHub", "Vercel", "Java", "C", "FigCraft"], cap: "how it ships" },
+  { k: "01 — WEB", items: ["HTML & CSS", "TypeScript", "JavaScript", "React", "Next.js", "Tailwind CSS"], cap: "where it renders" },
+  { k: "02 — BACKEND & DATABASE", items: ["PHP", "Laravel", "Node.js", "MySQL", "PostgreSQL", "Supabase"], cap: "where it lives" },
+  { k: "03 — DATA & MACHINE LEARNING", items: ["Python", "pandas", "NumPy", "scikit-learn", "LightGBM", "Optuna", "SHAP", "LSTM / GRU", "K-Means", "NLP"], cap: "where it learns" },
+  { k: "04 — MOBILE", items: ["Flutter", "Dart"], cap: "where it fits in a pocket" },
+  { k: "05 — LANGUAGES & TOOLS", items: ["Java", "C", "C++", "Git & GitHub", "Vercel", "Figma"], cap: "how it ships" },
 ];
 
 export const stackMarquee = ["TYPESCRIPT", "NEXT.JS", "REACT", "PYTHON", "SQL", "POSTGRESQL", "SUPABASE", "NODE.JS", "SCIKIT-LEARN", "LIGHTGBM"];
@@ -38,13 +39,21 @@ export const principles = [
 
 export type Project = {
   slug: string; title: string; label: string; tagline: string; desc: string;
-  role: string; type: string; stack: string; fig: string; file: string;
+  role: string; type: string; stack: string; fig: string;
   context: string; built: string;
+  live?: string; // only set where a live site exists
+  shots?: { src: string; alt: string }[]; // up to three app screenshots, fanned in the card (placeholder figure otherwise)
+  accent?: string; // background of the screenshot area
 };
 
 export const projects: Project[] = [
   {
-    slug: "nextlap", title: "Next Lap", label: "WEB · THESIS", fig: "fig.01 — next lap", file: "~/work/next-lap.md",
+    slug: "nextlap", live: "https://nextlap.live", accent: "#F2701C",
+    shots: [
+      { src: "/work/nextlap-overview.webp", alt: "Next Lap race overview: gap to leader, lap time spread and team pace" },
+      { src: "/work/nextlap-circuit.webp", alt: "Next Lap circuit and driver picker with a 3D track" },
+      { src: "/work/nextlap-replay.webp", alt: "Next Lap lap replay dashboard with live track map, telemetry and lap times" },
+    ], title: "Next Lap", label: "WEB · THESIS", fig: "fig.01 — next lap",
     tagline: "F1 lap times, predicted and visualised.",
     desc: "Pick a race and driver, see predicted vs actual lap times, and compare how the LSTM and GRU models behave across a stint.",
     role: "full-stack, solo", type: "web app · thesis", stack: "next.js · python · lstm/gru",
@@ -52,7 +61,7 @@ export const projects: Project[] = [
     built: "A web dashboard that lets you pick a race and driver, see predicted vs actual lap times, and compare how the LSTM and GRU models behave across a stint, including pit stops.",
   },
   {
-    slug: "arka", title: "ARKA", label: "DATA · RESEARCH", fig: "fig.02 — arka", file: "~/work/arka.md",
+    slug: "arka", title: "ARKA", label: "DATA · RESEARCH", fig: "fig.02 — arka",
     tagline: "Who's about to leave, and why.",
     desc: "A churn pipeline with a LightGBM stacking ensemble, SHAP explanations per customer and NLP on feedback, written up as a paper.",
     role: "pipeline, models, paper", type: "data · ml · paper", stack: "python · lightgbm · shap · nlp",
@@ -60,7 +69,7 @@ export const projects: Project[] = [
     built: "A churn pipeline with a LightGBM stacking ensemble tuned by Optuna, NLP on customer feedback, SHAP explanations per customer, K-Means segments and an LLM layer that drafts retention actions. Written up as an academic paper.",
   },
   {
-    slug: "apex", title: "APEX", label: "RESEARCH · TOOL", fig: "fig.03 — apex", file: "~/work/apex.md",
+    slug: "apex", title: "APEX", label: "RESEARCH · TOOL", fig: "fig.03 — apex",
     tagline: "The fastest way around a corner.",
     desc: "Takes track geometry and computes an optimised racing line: where to turn in, where to clip the apex, where to run wide.",
     role: "research, implementation", type: "research · tool", stack: "python · numpy · optimisation",
@@ -68,7 +77,7 @@ export const projects: Project[] = [
     built: "A tool that takes track geometry and computes an optimised racing line — where to turn in, where to clip the apex, where to run wide on exit — and plots it over the circuit.",
   },
   {
-    slug: "iot", title: "IoT Monitor", label: "HARDWARE · FINAL PROJECT", fig: "fig.04 — iot monitor", file: "~/work/iot-monitor.md",
+    slug: "iot", title: "IoT Monitor", label: "HARDWARE · FINAL PROJECT", fig: "fig.04 — iot monitor",
     tagline: "Sensors in, dashboard out.",
     desc: "A microcontroller reads sensor values and streams them through a backend to a live web dashboard with history.",
     role: "hardware, firmware, web", type: "hardware · final project", stack: "microcontroller · sensors · web",
@@ -76,7 +85,7 @@ export const projects: Project[] = [
     built: "A microcontroller reads sensor values and sends them to a backend, which streams them to a live web dashboard with current readings and history.",
   },
   {
-    slug: "dm", title: "Data Mining", label: "DATA · COURSEWORK", fig: "fig.05 — data mining", file: "~/work/data-mining.md",
+    slug: "dm", title: "Data Mining", label: "DATA · COURSEWORK", fig: "fig.05 — data mining",
     tagline: "Patterns hiding in plain tables.",
     desc: "Case studies covering cleaning, exploratory analysis, clustering and classification, each written up with the reasoning.",
     role: "analysis, write-ups", type: "data · coursework", stack: "python · pandas · scikit-learn",
@@ -84,7 +93,7 @@ export const projects: Project[] = [
     built: "A set of case studies covering cleaning, exploratory analysis, clustering and classification — each written up with the reasoning, not just the code.",
   },
   {
-    slug: "site", title: "abim.run", label: "WEB · PERSONAL", fig: "fig.06 — abim.run", file: "~/work/abim-run.md",
+    slug: "site", title: "abim.run", label: "WEB · PERSONAL", fig: "fig.06 — abim.run",
     tagline: "The site you're scrolling right now.",
     desc: "Designed in FigCraft, built with Next.js and TypeScript, with smooth scroll, motion and an admin dashboard planned.",
     role: "design + development", type: "web · portfolio", stack: "next.js · typescript · gsap · lenis",
@@ -102,7 +111,9 @@ export const process = [
 ];
 
 // PLACEHOLDERS: replace with your real certificates (title, issuer, year, credential id, verify link).
-export const certificates = [
+// img: optional picture of the certificate (landscape works best), e.g. "/certs/python.webp" from public/certs. Without it the card draws a blank certificate.
+export type Certificate = { title: string; issuer: string; year: string; id: string; url: string; img?: string };
+export const certificates: Certificate[] = [
   { title: "Certificate title", issuer: "Issuing organisation", year: "2026", id: "CREDENTIAL-ID-0001", url: "#" },
   { title: "Certificate title", issuer: "Issuing organisation", year: "2025", id: "CREDENTIAL-ID-0002", url: "#" },
   { title: "Certificate title", issuer: "Issuing organisation", year: "2025", id: "CREDENTIAL-ID-0003", url: "#" },

@@ -25,7 +25,7 @@ export default function SectionTracker() {
 
     const targetSection = initialHash && initialHash !== "#top"
       ? initialHash
-      : (document.referrer.includes("/all-certificates") || document.referrer.includes("/certificates") || document.referrer.includes("/all-projects") || document.referrer.includes("/projects")) && lastSaved && lastSaved !== "#top" && lastSaved !== "/"
+      : (document.referrer.includes("/all-certificates") || document.referrer.includes("/all-projects")) && lastSaved && lastSaved !== "#top" && lastSaved !== "/"
       ? lastSaved
       : null;
 

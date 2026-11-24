@@ -1,46 +1,70 @@
 "use client";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { motion, useMotionValue, useTransform, useMotionValueEvent, type MotionValue } from "motion/react";
-import { projects, GITHUB } from "../data";
+import { motion, useTransform, useMotionValue, useMotionValueEvent, type MotionValue } from "motion/react";
+import { projects, GITHUB, type Project } from "../data";
 import Figure from "./Figures";
+import GitHubMark from "./GitHubMark";
+import Shots from "./Shots";
 import { usePinned, scrollToProgress, usePinProgress } from "./scroll";
 import { TransitionLink } from "./PageTransition";
 
 const N = projects.length;
 const pad = (n: number) => String(n).padStart(2, "0");
 
-// Pinned mode: the slide nearest the current position is full size, neighbours ease back.
-function Slide({ i, s, pinned, active, onOpen, onFocusSlide }: { i: number; s: MotionValue<number>; pinned: boolean; active: boolean; onOpen: () => void; onFocusSlide: () => void }) {
-  const scale = useTransform(s, (v) => 1 - Math.min(1, Math.abs(v - i)) * 0.06);
-  const opacity = useTransform(s, (v) => 1 - Math.min(1, Math.abs(v - i)) * 0.45);
-  const pr = projects[i];
+// Stack pose for a card whose distance from the front is `rel` (0 = front, 1.. = behind, < 0 = leaving).
+// Cards behind are nudged up and right so their title strips peek out; a leaving card drops away downward.
+const DX = 30, DY = -28, TILT = [-0.4, 0.8, -1.1, 1.6];
+function pose(rel: number) {
+  if (rel < 0) { const t = Math.min(1, -rel); return `translate(${t * 50}px, ${t * 115}vh) rotate(${-0.4 + t * 8}deg)`; }
+  const d = Math.min(rel, 3), k = Math.floor(d), f = d - k;
+  const r = TILT[k] + (TILT[Math.min(3, k + 1)] - TILT[k]) * f;
+  return `translate(${d * DX}px, ${d * DY}px) rotate(${r}deg)`;
+}
+
+function CardBody({ pr, i }: { pr: Project; i: number }) {
   return (
-    <motion.article className={`card${active ? " is-active" : ""}`} style={pinned ? { scale, opacity } : undefined} onFocus={onFocusSlide}
-      role="group" aria-roledescription="slide" aria-label={`${i + 1} of ${N}`}>
-      <Figure slug={pr.slug} label={pr.fig} />
-      <div className="card-info">
-        <span className="card-ghost cond" aria-hidden="true">{pad(i + 1)}</span>
-        <div className="row"><span className="chip accent">{pr.label}</span><span className="mono small muted">{pad(i + 1)} / {pad(N)}</span></div>
-        <h3>{pr.title}</h3>
-        <p className="tagline">{pr.tagline}</p>
-        <p className="desc">{pr.desc}</p>
-        <dl className="meta">
-          <dt>ROLE</dt><dd>{pr.role}</dd>
-          <dt>STACK</dt>
-          <dd><ul className="chips">{pr.stack.split(" · ").map((t) => <li key={t} className="mono">{t}</li>)}</ul></dd>
-        </dl>
-        <div className="card-actions">
-          <button type="button" className="btn dark" onClick={onOpen}>Open case study <span aria-hidden="true">→</span></button>
-          <a className="link-u mono" href={GITHUB} target="_blank" rel="noreferrer">GITHUB ↗</a>
+    <>
+      <div className="pk-bar mono"><span>{pad(i + 1)} · {pr.title.toUpperCase()}</span><span>{pr.label}</span></div>
+      <div className="pk-fig">
+        {pr.shots ? <Shots pr={pr} /> : <Figure slug={pr.slug} label={pr.fig} />}
+        {pr.shots && <p className="sr-only">{pr.shots.map((x) => x.alt).join(". ")}</p>}
+      </div>
+      <div className="pk-info">
+        <span className="pk-ghost cond" aria-hidden="true">{pad(i + 1)}</span>
+        <div className="pk-text">
+          <h3>{pr.title}</h3>
+          <p className="pk-tag">{pr.tagline}</p>
+          <ul className="chips">{pr.stack.split(" · ").map((t) => <li key={t} className="mono">{t}</li>)}</ul>
+        </div>
+        <div className="pk-act">
+          {pr.live && <a className="btn dark" href={pr.live} target="_blank" rel="noreferrer">View live <span aria-hidden="true">↗</span></a>}
+          <a className="btn ghost gh" href={GITHUB} target="_blank" rel="noreferrer" aria-label={`View ${pr.title} codebase on GitHub`}>
+            <GitHubMark size={22} />
+            <span>View codebase</span>
+          </a>
         </div>
       </div>
+    </>
+  );
+}
+
+// One card of the stack. In pinned mode its pose follows the scroll position `s`; otherwise it is a plain slide.
+function StackCard({ i, s, pinned, front, children, label }: { i: number; s: MotionValue<number>; pinned: boolean; front: boolean; children: React.ReactNode; label: string }) {
+  const transform = useTransform(s, (v) => pose(i - v));
+  const visibility = useTransform(s, (v) => (i - v <= -1 ? "hidden" : "visible"));
+  return (
+    <motion.article className="pk-card" style={pinned ? { transform, visibility, zIndex: N + 1 - i } : undefined}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      {...(pinned && !front ? ({ inert: true } as any) : {})}
+      role="group" aria-roledescription="slide" aria-label={label}>
+      {children}
     </motion.article>
   );
 }
 
 const STAIRS = Array.from({ length: 6 }, (_, c) => Array.from({ length: c + 1 }, (_, r) => [c, r] as const)).flat();
 
-// Section 6's own backdrop: shapes at different depths that drift sideways as the list moves.
+// Section 6's own backdrop: shapes at different depths that drift sideways as the stack moves.
 function WorkBackdrop({ p }: { p: MotionValue<number> }) {
   const far = useTransform(p, [0, 1], ["0vw", "-8vw"]);
   const mid = useTransform(p, [0, 1], ["0vw", "-16vw"]);
@@ -63,59 +87,33 @@ function WorkBackdrop({ p }: { p: MotionValue<number> }) {
 
 export default function Projects() {
   const outer = useRef<HTMLElement>(null);
-  const track = useRef<HTMLDivElement>(null);
+  const deck = useRef<HTMLDivElement>(null);
   const prevBtn = useRef<HTMLButtonElement>(null);
   const nextBtn = useRef<HTMLButtonElement>(null);
-  const dialog = useRef<HTMLDialogElement>(null);
   const pending = useRef<number | null>(null);
   const releaseTimer = useRef<number>(0);
   const pinned = usePinned();
-  const [distance, setDistance] = useState(0);
   const [current, setCurrent] = useState(0);
+  const [front, setFront] = useState(0); // the card on top of the stack, 0 … N (N = "view all"); everything behind it is inert
   const [status, setStatus] = useState("");
-  const [open, setOpen] = useState(0);
 
-  // ---- pinned mode: vertical scroll drives the horizontal track ----
-  // stops[i] = scroll progress at which slide i (the last one is the "view all" panel) sits at the left edge.
+  // ---- pinned mode: vertical scroll flips through the stack. s runs 0 … N (N = the "view all" card). ----
   const scrollYProgress = usePinProgress(outer);
-  const [stops, setStops] = useState<number[]>(() => Array.from({ length: N + 1 }, (_, i) => i / N));
-  const x = useMotionValue(0);
   const s = useMotionValue(0);
-  const apply = useCallback(() => {
-    const p = scrollYProgress.get();
-    x.set(-p * distance);
-    let i = 0;
-    while (i < N - 1 && p > stops[i + 1]) i++;
-    const span = stops[i + 1] - stops[i];
-    s.set(i + (span > 0 ? Math.min(1, Math.max(0, (p - stops[i]) / span)) : 0));
-  }, [scrollYProgress, distance, stops, x, s]);
+  const apply = useCallback(() => s.set(scrollYProgress.get() * N), [scrollYProgress, s]);
   useMotionValueEvent(scrollYProgress, "change", apply);
   useLayoutEffect(apply, [apply]);
   useMotionValueEvent(s, "change", (v) => {
     if (!pinned) return;
-    // While a button/tab jump is travelling, keep showing its target (no flick back through the old numbers); free again on arrival.
+    setFront(Math.min(N, Math.round(v)));
+    // While an arrow jump is travelling, keep showing its target (no flick back through the old numbers); free again on arrival.
     if (pending.current !== null) { if (Math.abs(v - pending.current) < 0.08) pending.current = null; return; }
     setCurrent(Math.min(N - 1, Math.round(v)));
   });
 
-  useLayoutEffect(() => {
-    if (!pinned) { setDistance(0); return; }
-    const t = track.current!;
-    const measure = () => {
-      const kids = [...t.children] as HTMLElement[];
-      const d = kids[N].offsetLeft - t.offsetLeft;
-      setDistance(d);
-      setStops(kids.map((k) => (d > 0 ? (k.offsetLeft - t.offsetLeft) / d : 0)));
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(t);
-    return () => ro.disconnect();
-  }, [pinned]);
-
-  // ---- native mode (small screens / reduced motion): scroll-snap carousel ----
+  // ---- native mode (small screens / reduced motion): scroll-snap carousel of plain cards ----
   const nearest = () => {
-    const t = track.current!;
+    const t = deck.current!;
     const slides = [...t.children] as HTMLElement[];
     let best = 0;
     slides.forEach((sl, i) => {
@@ -126,7 +124,7 @@ export default function Projects() {
 
   useEffect(() => {
     if (pinned) return;
-    const t = track.current!;
+    const t = deck.current!;
     let frame = 0, timer = 0, settled = 0;
     const hasScrollEnd = "onscrollend" in t;
     const onEnd = () => {
@@ -152,11 +150,11 @@ export default function Projects() {
       clearTimeout(releaseTimer.current);
       releaseTimer.current = window.setTimeout(() => { pending.current = null; }, 2500); // safety: free if the user scrolls away mid-jump
       if (Math.abs(s.get() - target) < 0.08) pending.current = null; // already there: nothing to wait for
-      scrollToProgress(outer.current!, stops[target], instant);
+      scrollToProgress(outer.current!, target / N, instant);
       setStatus(`Project ${target + 1} of ${N}: ${projects[target].title}`);
       return;
     }
-    const t = track.current!;
+    const t = deck.current!;
     const sl = t.children[target] as HTMLElement;
     t.scrollTo({ left: sl.offsetLeft - t.offsetLeft, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
   };
@@ -166,7 +164,7 @@ export default function Projects() {
     if (!pinned) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
-      if (dialog.current?.open || (e.target instanceof Element && e.target.closest("input, textarea, select, [contenteditable]"))) return;
+      if (e.target instanceof Element && e.target.closest("input, textarea, select, [contenteditable]")) return;
       if (!outer.current) return;
       const r = outer.current.getBoundingClientRect();
       if (r.top > 1 || r.bottom < innerHeight - 1) return;
@@ -183,98 +181,56 @@ export default function Projects() {
     if (current === N - 1 && document.activeElement === nextBtn.current) prevBtn.current?.focus();
   }, [current]);
 
-  const openCase = (i: number) => { setOpen(i); dialog.current!.showModal(); };
-  const p = projects[open];
   const fill = useTransform(scrollYProgress, (v) => 0.04 + v * 0.96);
 
   return (
     <section ref={outer} id="projects" tabIndex={-1} className={`projects-pin${pinned ? " is-pinned" : ""}`}
-      style={pinned ? { height: `calc(100vh + ${distance * 1.15}px)` } : undefined}
+      style={pinned ? { height: `${100 + N * 85}vh` } : undefined}
       aria-roledescription="carousel" aria-label="Selected projects">
       <div className="pin-sticky">
         <WorkBackdrop p={scrollYProgress} />
         <div className="projects wrap">
-          <div className="projects-head">
-            <div>
-              <p className="mono small muted">[05] selected projects</p>
-              <h2 className="h2">Selected projects.</h2>
-              <p className="sub">Web apps, ML research and hardware — from thesis to side project.</p>
+          <div className="pk">
+            <div className="pk-side">
+              <p className="mono small">[05] selected projects</p>
+              <h2 className="pk-h">Selected<br />projects.</h2>
+              <p className="pk-sub">Web apps, ML research and hardware — from thesis to side project.</p>
+              <div className="pk-ctl">
+                <p className="pk-count" aria-hidden="true">
+                  <span className="pk-num"><motion.span key={current} initial={{ y: "60%", opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ type: "spring", stiffness: 380, damping: 30 }}>{pad(current + 1)}</motion.span></span>
+                  <span className="mono small">/ {pad(N)}</span>
+                </p>
+                <div className="pk-arrows">
+                  <button ref={prevBtn} type="button" className="arrow" onClick={() => go((pending.current ?? current) - 1)} disabled={current === 0} aria-label="Previous project">←</button>
+                  <button ref={nextBtn} type="button" className="arrow dark" onClick={() => go((pending.current ?? current) + 1)} disabled={current === N - 1} aria-label="Next project">→</button>
+                </div>
+              </div>
+              <div className="progress">
+                <div className="progress-track">
+                  {pinned ? <motion.i style={{ scaleX: fill }} /> : <i style={{ scale: `${(current + 1) / N} 1` }} />}
+                </div>
+                <p className="mono small">{pinned ? "scroll ↓ or use the arrow keys" : "swipe or use the arrows"}</p>
+              </div>
             </div>
-            <p className="counter" aria-hidden="true">
-              <span className="cond counter-num"><motion.span key={current} initial={{ y: "60%", opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ type: "spring", stiffness: 380, damping: 30 }}>{pad(current + 1)}</motion.span></span>
-              <span className="mono small">/ {pad(N)}</span>
-            </p>
-            <div className="arrows">
-              <button ref={prevBtn} type="button" className="arrow" onClick={() => go((pending.current ?? current) - 1)} disabled={current === 0} aria-label="Previous project">←</button>
-              <button ref={nextBtn} type="button" className="arrow dark" onClick={() => go((pending.current ?? current) + 1)} disabled={current === N - 1} aria-label="Next project">→</button>
-            </div>
-          </div>
 
-          <div className="wtabs" role="group" aria-label="Choose a project">
-            {projects.map((pr, i) => (
-              <button key={pr.slug} type="button" className="wtab mono" aria-current={i === current ? "true" : undefined} onClick={() => go(i)}>
-                <span>{pad(i + 1)}</span>{pr.file.split("/").pop()}
-              </button>
-            ))}
-          </div>
-
-          <motion.div ref={track} className="track" style={pinned ? { x } : undefined}
-            tabIndex={pinned ? undefined : 0} role="group" aria-label="Projects">
-            {projects.map((pr, i) => (
-              <Slide key={pr.slug} i={i} s={s} pinned={pinned} active={i === current} onOpen={() => openCase(i)}
-                onFocusSlide={() => { if (pinned && Math.round(s.get()) !== i) go(i, true); }} />
-            ))}
-            <div className="cta-slide" role="group" aria-roledescription="slide" aria-label="All projects">
-              <TransitionLink href="/all-projects" label="all projects" className="cta-link">
-                <span className="cta-k mono small">[{pad(N)}] projects, one page</span>
-                <span className="cta-t">View all<br />projects</span>
-                <span className="cta-go"><span className="btn accent">Open the full list <span aria-hidden="true">→</span></span></span>
-              </TransitionLink>
+            <div ref={deck} className="pk-deck" tabIndex={pinned ? undefined : 0} role="group" aria-label="Projects">
+              {projects.map((pr, i) => (
+                <StackCard key={pr.slug} i={i} s={s} pinned={pinned} front={i === front} label={`${i + 1} of ${N}`}>
+                  <CardBody pr={pr} i={i} />
+                </StackCard>
+              ))}
+              <StackCard i={N} s={s} pinned={pinned} front={front === N} label="All projects">
+                <TransitionLink href="/all-projects" label="all projects" className="pk-cta">
+                  <span className="mono small">[{pad(N)}] projects, one page</span>
+                  <span className="pk-cta-t">View all<br />projects</span>
+                  <span className="btn accent">Open the full list <span aria-hidden="true">→</span></span>
+                </TransitionLink>
+              </StackCard>
             </div>
-          </motion.div>
-
-          <div className="progress">
-            <div className="progress-track">
-              {pinned ? <motion.i style={{ scaleX: fill }} /> : <i style={{ scale: `${(current + 1) / N} 1` }} />}
-            </div>
-            <div className="row mono small muted"><span>{pad(current + 1)} / {pad(N)}</span><span>{pinned ? "scroll ↓ or use the arrow keys" : "swipe or use the arrows"}</span></div>
           </div>
           <p className="sr-only" role="status" aria-live="polite">{status}</p>
         </div>
       </div>
-
-      {/* closedby="any": click outside closes where supported; Esc closes everywhere. data-lenis-prevent: wheel inside scrolls the panel, not the page. */}
-      <dialog ref={dialog} className="case" aria-labelledby="case-title" data-lenis-prevent {...{ closedby: "any" }}>
-        <div className="case-head mono small">
-          <div className="case-head-dots" aria-hidden="true">
-            <i /><i /><i />
-          </div>
-          <span className="case-head-title">{p.file}</span>
-          <form method="dialog"><button type="submit" className="pill mono small" autoFocus>close <span className="muted">esc</span></button></form>
-        </div>
-        <div className="case-body" key={open}>
-          <p className="mono small muted">projects / {pad(open + 1)}</p>
-          <h2 id="case-title">{p.title}</h2>
-          <p className="case-tag">{p.tagline}</p>
-          <dl className="case-meta">
-            <dt>ROLE</dt><dd>{p.role}</dd>
-            <dt>TYPE</dt><dd>{p.type}</dd>
-            <dt>STACK</dt><dd>{p.stack}</dd>
-          </dl>
-          <h3 className="mono small">## context</h3>
-          <p>{p.context}</p>
-          <h3 className="mono small">## what I built</h3>
-          <p>{p.built}</p>
-        </div>
-        <div className="case-foot">
-          <a className="btn dark small-btn" href={GITHUB} target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a>
-          {/* shortcut: only Next Lap has a known live URL; add the others when they exist */}
-          {open === 0 && <a className="btn ghost small-btn" href="https://nextlap.live" target="_blank" rel="noreferrer">Visit live <span aria-hidden="true">↗</span></a>}
-          <button type="button" className="next mono small" onClick={() => setOpen((open + 1) % N)}>
-            next: {projects[(open + 1) % N].title} <span aria-hidden="true">→</span>
-          </button>
-        </div>
-      </dialog>
     </section>
   );
 }

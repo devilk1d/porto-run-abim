@@ -12,7 +12,7 @@ const glyphs = GLYPHS.map((g) => {
   return { w: g[0].length, cells };
 });
 
-// Posisi [x0, y0] per huruf untuk mode 1 baris (ABIM.) dan 2 baris (AB / IM.)
+// Posisi [x0, y0] per huruf (ABIM.)
 const LAYOUT_INLINE: [number, number][] = [
   [0, 0],  // A
   [6, 0],  // B
@@ -20,28 +20,19 @@ const LAYOUT_INLINE: [number, number][] = [
   [16, 0], // M
 ];
 
-const LAYOUT_STACKED: [number, number][] = [
-  [0, 0], // A
-  [6, 0], // B
-  [0, 9], // I (turun 7 + 2 spasi baris)
-  [4, 9], // M
-];
-
 export default function PixelName({
   fill = "currentColor",
   dotFill,
   className,
-  stacked = false,
 }: {
   fill?: string;
   dotFill?: string;
   className?: string;
-  stacked?: boolean;
 }) {
-  const layout = stacked ? LAYOUT_STACKED : LAYOUT_INLINE;
-  const cols = stacked ? 11 : dotFill ? 23 : 21;
-  const rows = stacked ? 16 : 7;
-  const dotPos: [number, number] = stacked ? [10, 15] : [22, 6];
+  const layout = LAYOUT_INLINE;
+  const cols = dotFill ? 23 : 21;
+  const rows = 7;
+  const dotPos: [number, number] = [22, 6];
 
   return (
     <svg

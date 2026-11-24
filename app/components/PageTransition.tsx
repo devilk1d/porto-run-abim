@@ -7,8 +7,8 @@ import { scrollToY, scrollToTarget, setProgrammaticScrolling } from "./scroll";
 /* Pixel-wipe page transition (the site's own look: the 28px pixel grid of the ABIM mark).
  *
  *   <PageTransitionProvider> once in the root layout, then anywhere:
- *   <TransitionLink href="/projects" label="projects">…</TransitionLink>      // drop-in for next/link
- *   const { go } = usePageTransition(); go("/projects", "projects");           // from code
+ *   <TransitionLink href="/all-projects" label="projects">…</TransitionLink>      // drop-in for next/link
+ *   const { go } = usePageTransition(); go("/all-projects", "projects");           // from code
  *
  * Squares sweep in diagonally from the top-left until the screen is covered, the route changes underneath,
  * then the same sweep uncovers the new page. Reduced motion: plain navigation, no overlay. */
@@ -86,9 +86,9 @@ export function PageTransitionProvider({ children }: { children: React.ReactNode
       const last = sessionStorage.getItem("lastSection");
       if (last && last !== "#top" && last !== "/") {
         targetHref = "/" + (last.startsWith("#") ? last : "#" + last);
-      } else if (pathname === "/all-certificates" || pathname === "/certificates") {
+      } else if (pathname === "/all-certificates") {
         targetHref = "/#certificates";
-      } else if (pathname === "/all-projects" || pathname === "/projects") {
+      } else if (pathname === "/all-projects") {
         targetHref = "/#projects";
       }
     }
@@ -96,9 +96,9 @@ export function PageTransitionProvider({ children }: { children: React.ReactNode
     // Save lastSection before leaving home page
     if (pathname === "/" && typeof window !== "undefined") {
       const clean = pathOf(targetHref);
-      if (clean === "/all-certificates" || clean === "/certificates") {
+      if (clean === "/all-certificates") {
         sessionStorage.setItem("lastSection", window.location.hash || "#certificates");
-      } else if (clean === "/all-projects" || clean === "/projects") {
+      } else if (clean === "/all-projects") {
         sessionStorage.setItem("lastSection", window.location.hash || "#projects");
       } else if (window.location.hash) {
         sessionStorage.setItem("lastSection", window.location.hash);

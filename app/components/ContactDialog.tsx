@@ -5,7 +5,7 @@ import { EMAIL } from "../data";
 // "Get in touch" pop-up. There is no backend: submitting composes the message and opens the visitor's mail app (mailto:),
 // so nothing is stored or sent from this site.
 const Ctx = createContext<{ open: () => void }>({ open: () => {} });
-export const useContactDialog = () => useContext(Ctx);
+const useContactDialog = () => useContext(Ctx);
 
 const TOPICS = ["Internship", "Collaboration", "A project", "Just saying hi"];
 

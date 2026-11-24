@@ -27,7 +27,7 @@ export function CertificateCard({ c, i }: { c: Certificate; i: number }) {
           ? <a className="cert-doc" href={c.img} target="_blank" rel="noreferrer" aria-label={`Open the ${c.title} certificate image`}>{doc}<span className="cert-zoom mono" aria-hidden="true">VIEW ↗</span></a>
           : <div className="cert-doc">{doc}</div>}
         <i className="cross tl" /><i className="cross tr" /><i className="cross bl" /><i className="cross br" />
-        <span className="cert-kind mono small">CERTIFICATE · {c.year}</span>
+        <span className="cert-kind mono small">CERTIFICATE · {c.year}{c.is_lifetime ? " · LIFETIME" : c.valid_until ? ` · VALID: ${c.valid_until}` : ""}</span>
         <span className="cert-seal" aria-hidden="true">✓</span>
       </div>
       <div className="cert-top">
@@ -45,7 +45,8 @@ export function CertificateCard({ c, i }: { c: Certificate; i: number }) {
   );
 }
 
-export default function Certificates() {
+export default function Certificates({ items = certificates }: { items?: Certificate[] }) {
+  const list = items && items.length > 0 ? items : certificates;
   return (
     <section id="certificates" tabIndex={-1} className="certs wrap">
       <div className="stack-head">
@@ -60,14 +61,14 @@ export default function Certificates() {
       </div>
 
       <ol className="cert-grid">
-        {certificates.map((c, i) => (
-          <CertificateCard key={c.id} c={c} i={i} />
+        {list.map((c, i) => (
+          <CertificateCard key={`${c.id}-${i}`} c={c} i={i} />
         ))}
       </ol>
 
       <div className="cert-more">
         <TransitionLink href="/all-certificates" label="all certificates" className="cert-all">
-          <span className="cert-all-n mono">{String(certificates.length).padStart(2, "0")}</span>
+          <span className="cert-all-n mono">{String(list.length).padStart(2, "0")}</span>
           <span className="cert-all-t">View all certificates</span>
           <span className="cert-all-go" aria-hidden="true">→</span>
         </TransitionLink>

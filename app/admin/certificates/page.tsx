@@ -1,0 +1,400 @@
+"use client";
+import { useEffect, useState } from "react";
+import { createClient } from "../../../utils/supabase/client";
+import { type Database } from "../../../types/database.types";
+
+type CertRow = Database["public"]["Tables"]["certificates"]["Row"];
+
+export default function AdminCertificatesPage() {
+  const [certs, setCerts] = useState<CertRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingCert, setEditingCert] = useState<CertRow | null>(null);
+  const [form, setForm] = useState({
+    title: "",
+    issuer: "",
+    year: "2026",
+    valid_until: "",
+    is_lifetime: false,
+    credential_id: "",
+    credential_url: "",
+    image_url: "",
+    order_index: 0,
+    is_featured: true,
+  });
+  const [saving, setSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const fetchCerts = async () => {
+    setLoading(true);
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("certificates")
+      .select("*")
+      .order("order_index", { ascending: true });
+
+    if (!error && data) {
+      setCerts(data);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchCerts();
+  }, []);
+
+  const openCreateModal = () => {
+    setEditingCert(null);
+    setForm({
+      title: "",
+      issuer: "",
+      year: new Date().getFullYear().toString(),
+      valid_until: "",
+      is_lifetime: false,
+      credential_id: "",
+      credential_url: "",
+      image_url: "",
+      order_index: certs.length,
+      is_featured: true,
+    });
+    setErrorMsg(null);
+    setModalOpen(true);
+  };
+
+  const openEditModal = (c: CertRow) => {
+    setEditingCert(c);
+    setForm({
+      title: c.title,
+      issuer: c.issuer,
+      year: c.year,
+      valid_until: c.valid_until || "",
+      is_lifetime: c.is_lifetime,
+      credential_id: c.credential_id,
+      credential_url: c.credential_url,
+      image_url: c.image_url || "",
+      order_index: c.order_index,
+      is_featured: c.is_featured,
+    });
+    setErrorMsg(null);
+    setModalOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setErrorMsg(null);
+
+    const supabase = createClient();
+
+    try {
+      if (editingCert) {
+        const { error } = await supabase
+          .from("certificates")
+          .update({
+            title: form.title,
+            issuer: form.issuer,
+            year: form.year,
+            valid_until: form.valid_until || null,
+            is_lifetime: Boolean(form.is_lifetime),
+            credential_id: form.credential_id,
+            credential_url: form.credential_url,
+            image_url: form.image_url || null,
+            order_index: Number(form.order_index),
+            is_featured: Boolean(form.is_featured),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", editingCert.id);
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("certificates").insert({
+          title: form.title,
+          issuer: form.issuer,
+          year: form.year,
+          valid_until: form.valid_until || null,
+          is_lifetime: Boolean(form.is_lifetime),
+          credential_id: form.credential_id,
+          credential_url: form.credential_url,
+          image_url: form.image_url || null,
+          order_index: Number(form.order_index),
+          is_featured: Boolean(form.is_featured),
+        });
+
+        if (error) throw error;
+      }
+
+      setModalOpen(false);
+      fetchCerts();
+    } catch (err: unknown) {
+      setErrorMsg((err as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: string, title: string) => {
+    if (!confirm(`Confirm deletion of certificate "${title}"?`)) return;
+    const supabase = createClient();
+    const { error } = await supabase.from("certificates").delete().eq("id", id);
+    if (!error) {
+      fetchCerts();
+    } else {
+      alert("Error deleting record: " + error.message);
+    }
+  };
+
+  return (
+    <div>
+      <div className="admin-head">
+        <div>
+          <p className="mono small muted">[02] data table</p>
+          <h1 className="h2 admin-title">Certificates & Credentials.</h1>
+          <p className="sub">Manage paper ticket credentials, verification endpoints, and validity dates.</p>
+        </div>
+        <div className="admin-head-actions">
+          <button type="button" onClick={openCreateModal} className="admin-btn primary">
+            + Add Certificate
+          </button>
+        </div>
+      </div>
+
+      <div className="admin-box">
+        <div className="admin-box-bar">
+          <div className="bar-title">
+            <div className="dots">
+              <i />
+              <i />
+              <i />
+            </div>
+            <span>~/database/public.certificates</span>
+          </div>
+          <span className="mono small">{certs.length} CREDENTIALS</span>
+        </div>
+
+        {loading ? (
+          <div style={{ padding: "40px", textAlign: "center" }} className="mono muted">
+            Querying table public.certificates...
+          </div>
+        ) : certs.length === 0 ? (
+          <div style={{ padding: "40px", textAlign: "center" }} className="mono muted">
+            Zero records found. Use [+ Add Certificate] to insert.
+          </div>
+        ) : (
+          <div className="admin-table-wrap">
+            <table className="admin-tbl">
+              <thead>
+                <tr>
+                  <th style={{ width: "60px" }}>Idx</th>
+                  <th>Title & Issuer</th>
+                  <th>Year / Validity</th>
+                  <th>Credential ID</th>
+                  <th>Verification</th>
+                  <th style={{ textAlign: "right" }}>Control</th>
+                </tr>
+              </thead>
+              <tbody>
+                {certs.map((c) => (
+                  <tr key={c.id}>
+                    <td className="mono muted">{String(c.order_index).padStart(2, "0")}</td>
+                    <td>
+                      <b style={{ display: "block" }}>{c.title}</b>
+                      <span className="mono small muted">{c.issuer}</span>
+                    </td>
+                    <td>
+                      <span className="mono small">{c.year}</span>
+                      {c.is_lifetime ? (
+                        <span className="chip accent" style={{ marginLeft: "8px" }}>
+                          LIFETIME
+                        </span>
+                      ) : c.valid_until ? (
+                        <span className="mono small muted" style={{ display: "block" }}>
+                          exp: {c.valid_until}
+                        </span>
+                      ) : null}
+                    </td>
+                    <td className="mono small">{c.credential_id}</td>
+                    <td>
+                      <a href={c.credential_url} target="_blank" rel="noreferrer" className="link-u mono small">
+                        Verify ↗
+                      </a>
+                    </td>
+                    <td style={{ textAlign: "right" }}>
+                      <div style={{ display: "inline-flex", gap: "6px" }}>
+                        <button
+                          type="button"
+                          onClick={() => openEditModal(c)}
+                          className="admin-btn sm"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(c.id, c.title)}
+                          className="admin-btn sm danger"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {modalOpen && (
+        <div className="admin-overlay" role="dialog" aria-modal="true">
+          <div className="admin-modal-window">
+            <div className="admin-modal-bar">
+              <i />
+              <i />
+              <i />
+              <span>~/certificates/edit.form</span>
+              <button
+                type="button"
+                className="close-pill"
+                onClick={() => setModalOpen(false)}
+              >
+                [close esc]
+              </button>
+            </div>
+
+            <div className="admin-modal-content">
+              {errorMsg && <div className="admin-alert error">{errorMsg}</div>}
+
+              <form onSubmit={handleSubmit}>
+                <div className="admin-field">
+                  <label htmlFor="c-title">Certificate Title</label>
+                  <input
+                    id="c-title"
+                    required
+                    value={form.title}
+                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    placeholder="e.g. Meta Front-End Developer"
+                  />
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+                  <div className="admin-field">
+                    <label htmlFor="c-issuer">Issuer Organization</label>
+                    <input
+                      id="c-issuer"
+                      required
+                      value={form.issuer}
+                      onChange={(e) => setForm({ ...form, issuer: e.target.value })}
+                      placeholder="e.g. Google Cloud / Coursera"
+                    />
+                  </div>
+
+                  <div className="admin-field">
+                    <label htmlFor="c-year">Issue Year</label>
+                    <input
+                      id="c-year"
+                      required
+                      className="mono"
+                      value={form.year}
+                      onChange={(e) => setForm({ ...form, year: e.target.value })}
+                      placeholder="e.g. 2026"
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+                  <div className="admin-field">
+                    <label htmlFor="c-valid">Valid Until (Expiration Date)</label>
+                    <input
+                      id="c-valid"
+                      type="date"
+                      disabled={form.is_lifetime}
+                      className="mono"
+                      value={form.valid_until}
+                      onChange={(e) => setForm({ ...form, valid_until: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="admin-field" style={{ justifyContent: "center" }}>
+                    <label className="admin-check-label" style={{ marginTop: "20px" }}>
+                      <input
+                        type="checkbox"
+                        checked={form.is_lifetime}
+                        onChange={(e) => setForm({ ...form, is_lifetime: e.target.checked, valid_until: e.target.checked ? "" : form.valid_until })}
+                      />
+                      <span>Lifetime (No expiration)</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+                  <div className="admin-field">
+                    <label htmlFor="c-id">Credential ID</label>
+                    <input
+                      id="c-id"
+                      required
+                      className="mono"
+                      value={form.credential_id}
+                      onChange={(e) => setForm({ ...form, credential_id: e.target.value })}
+                      placeholder="CREDENTIAL-ID-0001"
+                    />
+                  </div>
+
+                  <div className="admin-field">
+                    <label htmlFor="c-url">Verification URL</label>
+                    <input
+                      id="c-url"
+                      type="url"
+                      required
+                      className="mono"
+                      value={form.credential_url}
+                      onChange={(e) => setForm({ ...form, credential_url: e.target.value })}
+                      placeholder="https://..."
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 100px", gap: "14px" }}>
+                  <div className="admin-field">
+                    <label htmlFor="c-img">Certificate Asset Path (optional)</label>
+                    <input
+                      id="c-img"
+                      className="mono"
+                      value={form.image_url}
+                      onChange={(e) => setForm({ ...form, image_url: e.target.value })}
+                      placeholder="/certs/meta-cert.webp"
+                    />
+                  </div>
+
+                  <div className="admin-field">
+                    <label htmlFor="c-order">Order</label>
+                    <input
+                      id="c-order"
+                      type="number"
+                      required
+                      className="mono"
+                      value={form.order_index}
+                      onChange={(e) => setForm({ ...form, order_index: Number(e.target.value) })}
+                    />
+                  </div>
+                </div>
+
+                <div className="admin-modal-foot">
+                  <button
+                    type="button"
+                    className="admin-btn"
+                    onClick={() => setModalOpen(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button type="submit" className="admin-btn primary" disabled={saving}>
+                    {saving ? "Writing to database..." : editingCert ? "Commit Update" : "Insert Record"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

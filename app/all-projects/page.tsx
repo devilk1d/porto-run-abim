@@ -3,7 +3,7 @@ import ProjectIndex from "../components/ProjectIndex";
 import Navbar from "../components/Navbar";
 import BackHome from "../components/BackHome";
 import { ContactBlock, SiteFooter } from "../components/SiteEnd";
-import { projects } from "../data";
+import { getProjects } from "../../utils/supabase/queries";
 
 export const metadata: Metadata = {
   title: "All projects — abim.run",
@@ -12,7 +12,9 @@ export const metadata: Metadata = {
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
-export default function AllProjects() {
+export default async function AllProjects() {
+  const projectsList = await getProjects();
+
   return (
     <>
       <Navbar />
@@ -24,10 +26,10 @@ export default function AllProjects() {
             <p className="mono small muted">[00] all projects</p>
             <h1 className="h2 ap-h">All projects.</h1>
           </div>
-          <p className="sub">Everything I&apos;ve built so far — web apps, ML research and hardware, from thesis to side project. {pad(projects.length)} in total.</p>
+          <p className="sub">Everything I&apos;ve built so far — web apps, ML research and hardware, from thesis to side project. {pad(projectsList.length)} in total.</p>
         </div>
 
-        <ProjectIndex />
+        <ProjectIndex items={projectsList} />
       </main>
 
       <ContactBlock />

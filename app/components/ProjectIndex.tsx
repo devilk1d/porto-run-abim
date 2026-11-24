@@ -15,11 +15,10 @@ const FILTERS: { id: string; label: string; test: (p: Project) => boolean }[] = 
 ];
 
 // The project's card: screenshots (or the illustrative figure), the short text, links, and the longer write-up folded away.
-function Preview({ p }: { p: Project }) {
-  const i = projects.indexOf(p);
+function Preview({ p, index }: { p: Project; index: number }) {
   return (
     <article className="ap-pv">
-      <div className="pk-bar mono"><span>{pad(i + 1)} · {p.title.toUpperCase()}</span><span>{p.label}</span></div>
+      <div className="pk-bar mono"><span>{pad(index + 1)} · {p.title.toUpperCase()}</span><span>{p.label}</span></div>
       <div className="ap-fig">
         {p.shots ? <Shots pr={p} /> : <Figure slug={p.slug} label={p.fig} />}
         {p.shots && <p className="sr-only">{p.shots.map((x) => x.alt).join(". ")}</p>}
@@ -48,18 +47,19 @@ function Preview({ p }: { p: Project }) {
 
 // Filterable index. Wide screens: rows on the left, the active project previewed in a sticky card on the right.
 // Narrow screens: the active row opens its card right under itself.
-export default function ProjectIndex() {
+export default function ProjectIndex({ items = projects }: { items?: Project[] }) {
+  const list = items && items.length > 0 ? items : projects;
   const [filter, setFilter] = useState("all");
-  const [sel, setSel] = useState(projects[0].slug);
-  const visible = projects.filter(FILTERS.find((f) => f.id === filter)!.test);
-  const active = visible.find((p) => p.slug === sel) ?? visible[0];
+  const [sel, setSel] = useState(list[0]?.slug ?? "");
+  const visible = list.filter(FILTERS.find((f) => f.id === filter)!.test);
+  const active = visible.find((p) => p.slug === sel) ?? visible[0] ?? list[0];
 
   return (
     <>
       <div className="ap-filters mono" role="group" aria-label="Filter projects">
         {FILTERS.map((f) => (
           <button key={f.id} type="button" aria-pressed={f.id === filter} onClick={() => setFilter(f.id)}>
-            {f.label} {pad(projects.filter(f.test).length)}
+            {f.label} {pad(list.filter(f.test).length)}
           </button>
         ))}
       </div>
@@ -68,20 +68,21 @@ export default function ProjectIndex() {
         <ol className="ap-list">
           {visible.map((p) => {
             const on = p === active;
+            const idx = list.indexOf(p);
             return (
               <li key={p.slug}>
                 <button type="button" className={`ap-row${on ? " on" : ""}`} aria-current={on ? "true" : undefined}
                   onMouseEnter={() => setSel(p.slug)} onFocus={() => setSel(p.slug)} onClick={() => setSel(p.slug)}>
-                  <span className="n mono">{pad(projects.indexOf(p) + 1)}</span>
+                  <span className="n mono">{pad(idx + 1)}</span>
                   <span className="t"><b>{p.title}</b><span>{p.tagline}</span></span>
                   <span className="m mono">{p.type}<br />{p.stack}</span>
                 </button>
-                {on && <div className="ap-inline"><Preview p={p} /></div>}
+                {on && <div className="ap-inline"><Preview p={p} index={idx} /></div>}
               </li>
             );
           })}
         </ol>
-        <aside className="ap-aside" aria-label="Project preview" key={active.slug}><Preview p={active} /></aside>
+        <aside className="ap-aside" aria-label="Project preview" key={active?.slug}><Preview p={active} index={list.indexOf(active)} /></aside>
       </div>
     </>
   );

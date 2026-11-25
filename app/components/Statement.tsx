@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { motion, useScroll, useSpring, useTransform } from "motion/react";
+import { m, useScroll, useSpring, useTransform } from "motion/react";
 
 const WORDS = "Most of the work is the part nobody sees — the schema, the edge cases, and the tests that keep it standing.".split(" ");
 
@@ -23,7 +23,8 @@ export default function Statement() {
       if (!ref.current) return;
       const r = ref.current.getBoundingClientRect();
       const p = Math.min(1, Math.max(0, (innerHeight * 0.85 - r.top) / (r.height * 0.9)));
-      setLit(Math.round(p * WORDS.length));
+      const next = Math.round(p * WORDS.length);
+      setLit((prev) => (prev === next ? prev : next));
     };
     const onScroll = () => { frame ||= requestAnimationFrame(update); };
     update();
@@ -34,7 +35,7 @@ export default function Statement() {
   const pips = Math.ceil((lit / WORDS.length) * 4);
   return (
     <section ref={ref} id="statement" className="statement" aria-labelledby="statement-text">
-      <motion.div className="statement-block" style={still ? undefined : { scale }}>
+      <m.div className="statement-block" style={still ? undefined : { scale }}>
         <div className="row mono small"><span>[01] how I think</span><span>01 / 08</span></div>
         <p id="statement-text" className="statement-text">
           {WORDS.map((w, i) => <span key={i} className={i < lit ? "on" : undefined}>{w} </span>)}
@@ -46,7 +47,7 @@ export default function Statement() {
           </span>
           <span className="tags">schema · edge cases · tests · deploys</span>
         </div>
-      </motion.div>
+      </m.div>
     </section>
   );
 }

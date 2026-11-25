@@ -1,4 +1,5 @@
-import { createClient } from "./server";
+import { unstable_cache } from "next/cache";
+import { createPublicClient } from "./public";
 import {
   projects as defaultProjects,
   certificates as defaultCertificates,
@@ -23,9 +24,14 @@ export type TimelineItem = {
   is_branch?: boolean;
 };
 
-export async function getProjects(): Promise<Project[]> {
-  try {
-    const supabase = await createClient();
+export type AboutProfile = {
+  photoUrl: string | null;
+  photoAlt: string;
+};
+
+const fetchProjectsCached = unstable_cache(
+  async (): Promise<Project[]> => {
+    const supabase = createPublicClient();
     const { data, error } = await supabase
       .from("projects")
       .select("*, project_shots(*)")
@@ -33,7 +39,7 @@ export async function getProjects(): Promise<Project[]> {
       .eq("is_hidden", false)
       .order("order_index", { ascending: true });
 
-    if (error || !data) return defaultProjects;
+    if (error || !data) throw error || new Error("Failed to fetch projects");
 
     return data.map((p) => ({
       slug: p.slug,
@@ -60,29 +66,45 @@ export async function getProjects(): Promise<Project[]> {
           ? [{ src: p.image_url, alt: p.title }]
           : undefined,
     }));
+  },
+  ["public-projects"],
+  { revalidate: 3600, tags: ["portfolio-data"] }
+);
+
+export async function getProjects(): Promise<Project[]> {
+  try {
+    return await fetchProjectsCached();
   } catch {
     return defaultProjects;
   }
 }
 
-export async function getProjectTypes(): Promise<string[]> {
-  try {
-    const supabase = await createClient();
+const fetchProjectTypesCached = unstable_cache(
+  async (): Promise<string[]> => {
+    const supabase = createPublicClient();
     const { data, error } = await supabase
       .from("project_types")
       .select("name")
       .order("name", { ascending: true });
 
-    if (error || !data) return [];
+    if (error || !data) throw error || new Error("Failed to fetch project types");
     return data.map((t) => t.name.trim().toLowerCase()).filter(Boolean);
+  },
+  ["public-project-types"],
+  { revalidate: 3600, tags: ["portfolio-data"] }
+);
+
+export async function getProjectTypes(): Promise<string[]> {
+  try {
+    return await fetchProjectTypesCached();
   } catch {
     return [];
   }
 }
 
-export async function getCertificates(): Promise<Certificate[]> {
-  try {
-    const supabase = await createClient();
+const fetchCertificatesCached = unstable_cache(
+  async (): Promise<Certificate[]> => {
+    const supabase = createPublicClient();
     const { data, error } = await supabase
       .from("certificates")
       .select("*")
@@ -90,7 +112,7 @@ export async function getCertificates(): Promise<Certificate[]> {
       .eq("is_hidden", false)
       .order("order_index", { ascending: true });
 
-    if (error || !data) return defaultCertificates;
+    if (error || !data) throw error || new Error("Failed to fetch certificates");
 
     return data.map((c) => ({
       title: c.title,
@@ -102,14 +124,22 @@ export async function getCertificates(): Promise<Certificate[]> {
       valid_until: c.valid_until,
       is_lifetime: c.is_lifetime,
     }));
+  },
+  ["public-certificates"],
+  { revalidate: 3600, tags: ["portfolio-data"] }
+);
+
+export async function getCertificates(): Promise<Certificate[]> {
+  try {
+    return await fetchCertificatesCached();
   } catch {
     return defaultCertificates;
   }
 }
 
-export async function getExperiences(): Promise<TimelineItem[]> {
-  try {
-    const supabase = await createClient();
+const fetchExperiencesCached = unstable_cache(
+  async (): Promise<TimelineItem[]> => {
+    const supabase = createPublicClient();
     const { data, error } = await supabase
       .from("experiences")
       .select("*")
@@ -117,7 +147,7 @@ export async function getExperiences(): Promise<TimelineItem[]> {
       .eq("is_hidden", false)
       .order("order_index", { ascending: true });
 
-    if (error || !data) return defaultTimeline;
+    if (error || !data) throw error || new Error("Failed to fetch experiences");
 
     return data.map((e) => ({
       label: e.label,
@@ -127,53 +157,71 @@ export async function getExperiences(): Promise<TimelineItem[]> {
       tags: e.tags,
       is_branch: e.is_branch,
     }));
+  },
+  ["public-experiences"],
+  { revalidate: 3600, tags: ["portfolio-data"] }
+);
+
+export async function getExperiences(): Promise<TimelineItem[]> {
+  try {
+    return await fetchExperiencesCached();
   } catch {
     return defaultTimeline;
   }
 }
 
-export async function getAboutChapters(): Promise<AboutChapter[]> {
-  try {
-    const supabase = await createClient();
+const fetchAboutChaptersCached = unstable_cache(
+  async (): Promise<AboutChapter[]> => {
+    const supabase = createPublicClient();
     const { data, error } = await supabase
       .from("about_chapters")
       .select("*")
       .order("order_index", { ascending: true });
 
-    if (error || !data || data.length === 0) return defaultAbout;
+    if (error || !data || data.length === 0) throw error || new Error("Failed to fetch about chapters");
 
     return data.map((a) => ({
       k: a.chapter_key,
       p: a.paragraph,
       hl: a.highlights,
     }));
+  },
+  ["public-about-chapters"],
+  { revalidate: 3600, tags: ["portfolio-data"] }
+);
+
+export async function getAboutChapters(): Promise<AboutChapter[]> {
+  try {
+    return await fetchAboutChaptersCached();
   } catch {
     return defaultAbout;
   }
 }
 
-export type AboutProfile = {
-  photoUrl: string | null;
-  photoAlt: string;
-};
-
-export async function getAboutProfile(): Promise<AboutProfile> {
-  try {
-    const supabase = await createClient();
+const fetchAboutProfileCached = unstable_cache(
+  async (): Promise<AboutProfile> => {
+    const supabase = createPublicClient();
     const { data, error } = await supabase
       .from("about_profile")
       .select("photo_url, photo_alt")
       .limit(1)
       .maybeSingle();
 
-    if (error || !data) {
-      return { photoUrl: null, photoAlt: "Abim portrait" };
-    }
+    if (error) throw error;
+    if (!data) return { photoUrl: null, photoAlt: "Abim portrait" };
 
     return {
       photoUrl: data.photo_url || null,
       photoAlt: data.photo_alt || "Abim portrait",
     };
+  },
+  ["public-about-profile"],
+  { revalidate: 3600, tags: ["portfolio-data"] }
+);
+
+export async function getAboutProfile(): Promise<AboutProfile> {
+  try {
+    return await fetchAboutProfileCached();
   } catch {
     return { photoUrl: null, photoAlt: "Abim portrait" };
   }

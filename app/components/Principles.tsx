@@ -1,6 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
-import { motion, useMotionValueEvent, useTransform, type MotionValue } from "motion/react";
+import { m, useMotionValueEvent, useTransform, type MotionValue } from "motion/react";
 import { principles } from "../data";
 import { usePinned, scrollToProgress, usePinProgress } from "./scroll";
 
@@ -22,7 +22,7 @@ function Card({ i, s, pinned }: { i: number; s: MotionValue<number>; pinned: boo
   const dim = useTransform(depth, (d) => d * 0.22);
   const p = principles[i];
   return (
-    <motion.article className={`pcard c${i}`} style={pinned ? { y, scale, zIndex: i } : undefined} aria-labelledby={`p-${i}`}>
+    <m.article className={`pcard c${i}`} style={pinned ? { y, scale, zIndex: i } : undefined} aria-labelledby={`p-${i}`}>
       <div className="pcard-tab mono small">
         <i /><span>principle-0{i + 1}.test.ts</span><b>PASS</b>
       </div>
@@ -32,8 +32,8 @@ function Card({ i, s, pinned }: { i: number; s: MotionValue<number>; pinned: boo
         <p>{p.body}</p>
       </div>
       <pre className="pcard-code mono" aria-hidden="true">{CODE[i]}</pre>
-      {pinned && <motion.i className="pcard-shade" style={{ opacity: dim }} aria-hidden="true" />}
-    </motion.article>
+      {pinned && <m.i className="pcard-shade" style={{ opacity: dim }} aria-hidden="true" />}
+    </m.article>
   );
 }
 
@@ -78,7 +78,7 @@ export default function Principles() {
                 <p className="runner-sum">Tests: <b>{passed} passed</b>, {N} total</p>
               </div>
             )}
-            {pinned && <motion.div className="pbar" aria-hidden="true"><motion.i style={{ scaleX: scrollYProgress }} /></motion.div>}
+            {pinned && <m.div className="pbar" aria-hidden="true"><m.i style={{ scaleX: scrollYProgress }} /></m.div>}
           </div>
           <div className="pstack">
             <span className="mono small count">05 / 08</span>

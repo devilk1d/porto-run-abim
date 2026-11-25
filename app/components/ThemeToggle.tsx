@@ -50,7 +50,7 @@ export default function ThemeToggle() {
   }
 
   return (
-    <button type="button" className="theme" onClick={toggle}>
+    <button type="button" className="theme" aria-label="Toggle color theme" onClick={toggle}>
       <span className="theme-dark" aria-hidden="true">☾</span>
       <span className="theme-light" aria-hidden="true">☀</span>
       <span className="sr-only theme-dark">Switch to dark theme</span>

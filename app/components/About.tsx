@@ -1,6 +1,6 @@
 "use client";
-import { useRef, useState } from "react";
-import { motion, useMotionValueEvent, useReducedMotion, useScroll } from "motion/react";
+import { memo, useRef, useState } from "react";
+import { m, useMotionValueEvent, useReducedMotion, useScroll } from "motion/react";
 import { about } from "../data";
 import PixelPhoto from "./PixelPhoto";
 
@@ -19,12 +19,15 @@ const bare = (w: string) => w.replace(/[,.:]+$/, "");
 type AboutItem = { k: string; p: string; hl: string[] };
 
 // One chapter: its words light up as the paragraph scrolls from the lower part of the screen to the middle.
-function Chapter({ item, words, hlFlags }: { item: AboutItem; words: string[]; hlFlags: boolean[] }) {
+const Chapter = memo(function Chapter({ item, words, hlFlags }: { item: AboutItem; words: string[]; hlFlags: boolean[] }) {
   const ref = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start 85%", "end 68%"] });
   const [lit, setLit] = useState(0);
-  useMotionValueEvent(scrollYProgress, "change", (v) => setLit(Math.round(Math.min(1, Math.max(0, v)) * words.length)));
+  useMotionValueEvent(scrollYProgress, "change", (v) => {
+    const next = Math.round(Math.min(1, Math.max(0, v)) * words.length);
+    setLit((prev) => (prev === next ? prev : next));
+  });
   const n = reduce ? words.length : lit;
   return (
     <div className="chap-item">
@@ -35,7 +38,7 @@ function Chapter({ item, words, hlFlags }: { item: AboutItem; words: string[]; h
       </div>
     </div>
   );
-}
+});
 
 // Normal page flow: the ID card stays put (sticky) while the four chapters scroll past on the right, each one reading itself in
 // as it crosses the screen. The photo sharpens as the section comes into view.
@@ -52,7 +55,10 @@ export default function About({
   const body = useRef<HTMLDivElement>(null);
   const [amount, setAmount] = useState(0);
   const { scrollYProgress: arrive } = useScroll({ target: outer, offset: ["start 70%", "start 15%"] });
-  useMotionValueEvent(arrive, "change", (v) => setAmount(Math.round(Math.min(1, Math.max(0, v)) * 20) / 20));
+  useMotionValueEvent(arrive, "change", (v) => {
+    const next = Math.round(Math.min(1, Math.max(0, v)) * 20) / 20;
+    setAmount((prev) => (prev === next ? prev : next));
+  });
   const { scrollYProgress: read } = useScroll({ target: body, offset: ["start 60%", "end 60%"] });
 
   const list = items && items.length > 0 ? items : about;
@@ -86,7 +92,7 @@ export default function About({
 
         <div ref={body} className="about-body chap">
           <div className="row mono small"><span>[02] about</span><span>02 / 08</span></div>
-          <span className="chap-rail" aria-hidden="true"><motion.i style={{ scaleY: read }} /></span>
+          <span className="chap-rail" aria-hidden="true"><m.i style={{ scaleY: read }} /></span>
           {list.map((b, i) => <Chapter key={b.k} item={b} words={wordsList[i]} hlFlags={hlList[i]} />)}
         </div>
       </div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { motion, AnimatePresence } from "motion/react";
+import { m, AnimatePresence } from "motion/react";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import { ContactTrigger } from "./ContactDialog";
@@ -234,6 +234,7 @@ export default function Navbar({ links = DEFAULT_NAV_LINKS }: NavbarProps) {
         <a
           className="logo"
           href={isHome ? "#top" : "/"}
+          aria-label="abim.run home"
           onClick={handleLogoClick}
         >
           <Logo />
@@ -268,7 +269,7 @@ export default function Navbar({ links = DEFAULT_NAV_LINKS }: NavbarProps) {
       {/* 3. Fullscreen menu overlay with per-slice slide animations */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
+          <m.div
             className="fullscreen-menu-overlay"
             role="dialog"
             aria-modal="true"
@@ -279,7 +280,7 @@ export default function Navbar({ links = DEFAULT_NAV_LINKS }: NavbarProps) {
             exit="exit"
           >
             {/* Header row */}
-            <motion.div className="fullscreen-menu-header" variants={headerVariants}>
+            <m.div className="fullscreen-menu-header" variants={headerVariants}>
               <button
                 type="button"
                 className="logo"
@@ -306,13 +307,13 @@ export default function Navbar({ links = DEFAULT_NAV_LINKS }: NavbarProps) {
                   <span aria-hidden="true">✕</span>
                 </button>
               </div>
-            </motion.div>
+            </m.div>
 
             {/* Section slices container */}
             <div className="fullscreen-menu-content">
               <ul className="fullscreen-menu-list">
                 {items.map((item, index) => (
-                  <motion.li
+                  <m.li
                     key={item.href}
                     className="fullscreen-menu-slice"
                     custom={index}
@@ -334,11 +335,11 @@ export default function Navbar({ links = DEFAULT_NAV_LINKS }: NavbarProps) {
                         </span>
                       </div>
                     </button>
-                  </motion.li>
+                  </m.li>
                 ))}
               </ul>
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </>

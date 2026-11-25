@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   siTypescript, siNextdotjs, siReact, siTailwindcss, siHtml5, siNodedotjs, siPython, siPostgresql,
   siSupabase, siScikitlearn, siPandas, siGithub, siVercel, siC, siMysql, siNumpy, siOptuna, siCplusplus, siFigma, siFlutter, siDart, siLaravel, siPhp, siJavascript,
@@ -41,13 +41,21 @@ export default function StackSection({ children }: { children: React.ReactNode }
     document.getElementById(`sx-tab-${next}`)?.focus();
   }
 
-  // Each tile gets its own pointer position so a soft spotlight follows the cursor across the row.
+  const spotFrame = useRef(0);
+
+  // Only measure and update the currently hovered tile, throttled to animation frames to prevent layout thrashing.
   function spot(e: React.PointerEvent<HTMLUListElement>) {
-    for (const t of e.currentTarget.children) {
-      const r = t.getBoundingClientRect();
-      (t as HTMLElement).style.setProperty("--mx", `${e.clientX - r.left}px`);
-      (t as HTMLElement).style.setProperty("--my", `${e.clientY - r.top}px`);
-    }
+    const tile = (e.target as HTMLElement | null)?.closest(".sx-tile") as HTMLElement | null;
+    if (!tile) return;
+    const x = e.clientX;
+    const y = e.clientY;
+    if (spotFrame.current) cancelAnimationFrame(spotFrame.current);
+    spotFrame.current = requestAnimationFrame(() => {
+      spotFrame.current = 0;
+      const r = tile.getBoundingClientRect();
+      tile.style.setProperty("--mx", `${x - r.left}px`);
+      tile.style.setProperty("--my", `${y - r.top}px`);
+    });
   }
 
   return (

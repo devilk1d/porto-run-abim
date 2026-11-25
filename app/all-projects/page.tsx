@@ -12,6 +12,8 @@ export const metadata: Metadata = {
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
+export const revalidate = 3600;
+
 export default async function AllProjects() {
   const [projectsList, projectTypes] = await Promise.all([
     getProjects(),

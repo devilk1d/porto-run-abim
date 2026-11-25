@@ -1,7 +1,6 @@
 "use client";
 import { createContext, useContext, useRef, useState } from "react";
 import { EMAIL } from "../data";
-import { createClient } from "../../utils/supabase/client";
 
 const Ctx = createContext<{ open: () => void }>({ open: () => {} });
 export const useContactDialog = () => useContext(Ctx);
@@ -32,6 +31,7 @@ export function ContactProvider({ children }: { children: React.ReactNode }) {
     const message = (f.get("message") as string) || "";
 
     try {
+      const { createClient } = await import("../../utils/supabase/client");
       const supabase = createClient();
       const { error } = await supabase.from("contact_messages").insert({
         topic,

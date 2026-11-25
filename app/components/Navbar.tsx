@@ -121,6 +121,15 @@ export default function Navbar({ links = DEFAULT_NAV_LINKS }: NavbarProps) {
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 860px)");
+    const sync = () => setIsMobile(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
   const items = links.map(([label, href]) => ({ num: SECTION_NUM[href] ?? "", label, href }));
   const slice = sliceVariants(items.length);
   const overlay = overlayVariants(items.length);
@@ -223,13 +232,15 @@ export default function Navbar({ links = DEFAULT_NAV_LINKS }: NavbarProps) {
     setIsOpen(false);
   };
 
+  const showFloating = (isScrolled || isMobile) && !isOpen;
+
   return (
     <>
       {/* 1. Normal top bar */}
       <header
-        className={`nav ${isScrolled ? "nav-hidden" : ""}`}
+        className={`nav ${isScrolled || isMobile ? "nav-hidden" : ""}`}
         aria-label="Main navigation"
-        aria-hidden={isScrolled}
+        aria-hidden={isScrolled || isMobile}
       >
         <a
           className="logo"
@@ -250,17 +261,17 @@ export default function Navbar({ links = DEFAULT_NAV_LINKS }: NavbarProps) {
         </Magnetic>
       </header>
 
-      {/* 2. Top-Right floating button (visible when reached Section 1 & below) */}
+      {/* 2. Top-Right floating button (always visible on mobile, and on desktop when scrolled) */}
       <aside
-        className={`top-right-nav ${isScrolled && !isOpen ? "is-visible" : ""}`}
-        aria-hidden={!isScrolled || isOpen}
+        className={`top-right-nav ${showFloating ? "is-visible" : ""}${isOpen ? " is-menu-open" : ""}`}
+        aria-hidden={!showFloating}
       >
         <button
           type="button"
           className="top-right-menu-btn"
           onClick={() => setIsOpen(true)}
           aria-label="Open navigation menu"
-          tabIndex={isScrolled && !isOpen ? 0 : -1}
+          tabIndex={showFloating ? 0 : -1}
         >
           <Logo size={40} />
         </button>

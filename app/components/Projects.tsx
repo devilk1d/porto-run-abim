@@ -123,7 +123,7 @@ export default function Projects({ items = projects }: { items?: Project[] }) {
     setFront((prev) => (prev === nextFront ? prev : nextFront));
     // While an arrow jump is travelling, keep showing its target (no flick back through the old numbers); free again on arrival.
     if (pending.current !== null) { if (Math.abs(v - pending.current) < 0.08) pending.current = null; return; }
-    const nextCurrent = Math.min(N - 1, Math.round(v));
+    const nextCurrent = Math.min(N, Math.round(v));
     setCurrent((prev) => (prev === nextCurrent ? prev : nextCurrent));
   });
 
@@ -135,7 +135,7 @@ export default function Projects({ items = projects }: { items?: Project[] }) {
     slides.forEach((sl, i) => {
       if (Math.abs(sl.offsetLeft - t.offsetLeft - t.scrollLeft) < Math.abs(slides[best].offsetLeft - t.offsetLeft - t.scrollLeft)) best = i;
     });
-    return Math.min(N - 1, best);
+    return Math.min(N, best);
   };
 
   useEffect(() => {
@@ -147,7 +147,10 @@ export default function Projects({ items = projects }: { items?: Project[] }) {
       pending.current = null;
       const i = nearest();
       setCurrent(i);
-      if (i !== settled) { settled = i; setStatus(`Project ${i + 1} of ${N}: ${list[i]?.title ?? ""}`); }
+      if (i !== settled) {
+        settled = i;
+        setStatus(i === N ? "View all projects card" : `Project ${i + 1} of ${N}: ${list[i]?.title ?? ""}`);
+      }
     };
     const onScroll = () => {
       if (pending.current === null) frame ||= requestAnimationFrame(() => { frame = 0; setCurrent(nearest()); });
@@ -159,7 +162,7 @@ export default function Projects({ items = projects }: { items?: Project[] }) {
   }, [pinned]);
 
   const go = (i: number, instant = false) => {
-    const target = Math.max(0, Math.min(N - 1, i));
+    const target = Math.max(0, Math.min(N, i));
     pending.current = target;
     setCurrent(target);
     if (pinned) {
@@ -167,7 +170,7 @@ export default function Projects({ items = projects }: { items?: Project[] }) {
       releaseTimer.current = window.setTimeout(() => { pending.current = null; }, 2500); // safety: free if the user scrolls away mid-jump
       if (Math.abs(s.get() - target) < 0.08) pending.current = null; // already there: nothing to wait for
       scrollToProgress(outer.current!, target / N, instant);
-      setStatus(`Project ${target + 1} of ${N}: ${list[target]?.title ?? ""}`);
+      setStatus(target === N ? "View all projects card" : `Project ${target + 1} of ${N}: ${list[target]?.title ?? ""}`);
       return;
     }
     const t = deck.current!;
@@ -194,8 +197,8 @@ export default function Projects({ items = projects }: { items?: Project[] }) {
   // Keep focus on a usable control when the focused one becomes disabled at an end.
   useEffect(() => {
     if (current === 0 && document.activeElement === prevBtn.current) nextBtn.current?.focus();
-    if (current === N - 1 && document.activeElement === nextBtn.current) prevBtn.current?.focus();
-  }, [current]);
+    if (current === N && document.activeElement === nextBtn.current) prevBtn.current?.focus();
+  }, [current, N]);
 
   const fill = useTransform(scrollYProgress, (v) => 0.04 + v * 0.96);
 
@@ -213,17 +216,17 @@ export default function Projects({ items = projects }: { items?: Project[] }) {
               <p className="pk-sub">Web apps, ML research and hardware — from thesis to side project.</p>
               <div className="pk-ctl">
                 <p className="pk-count" aria-hidden="true">
-                  <span className="pk-num"><m.span key={current} initial={{ y: "60%", opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ type: "spring", stiffness: 380, damping: 30 }}>{pad(current + 1)}</m.span></span>
+                  <span className="pk-num"><m.span key={current} initial={{ y: "60%", opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ type: "spring", stiffness: 380, damping: 30 }}>{current === N ? "ALL" : pad(current + 1)}</m.span></span>
                   <span className="mono small">/ {pad(N)}</span>
                 </p>
                 <div className="pk-arrows">
                   <button ref={prevBtn} type="button" className="arrow" onClick={() => go((pending.current ?? current) - 1)} disabled={current === 0} aria-label="Previous project">←</button>
-                  <button ref={nextBtn} type="button" className="arrow dark" onClick={() => go((pending.current ?? current) + 1)} disabled={current === N - 1} aria-label="Next project">→</button>
+                  <button ref={nextBtn} type="button" className="arrow dark" onClick={() => go((pending.current ?? current) + 1)} disabled={current === N} aria-label="Next project">→</button>
                 </div>
               </div>
               <div className="progress">
                 <div className="progress-track">
-                  {pinned ? <m.i style={{ scaleX: fill }} /> : <i style={{ scale: `${(current + 1) / N} 1` }} />}
+                  {pinned ? <m.i style={{ scaleX: fill }} /> : <i style={{ scale: `${(current + 1) / (N + 1)} 1` }} />}
                 </div>
                 <p className="mono small">{pinned ? "scroll ↓ or use the arrow keys" : "swipe or use the arrows"}</p>
               </div>

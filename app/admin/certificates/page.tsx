@@ -4,6 +4,7 @@ import { createClient } from "../../../utils/supabase/client";
 import { type Database } from "../../../types/database.types";
 import { reorderItems } from "../../../utils/supabase/reorder";
 import { optimizeImageToWebP } from "../../../utils/image";
+import { revalidatePortfolioCache } from "../../../utils/revalidate";
 import OrderControl from "../components/OrderControl";
 import AdminModal from "../components/AdminModal";
 
@@ -191,6 +192,7 @@ export default function AdminCertificatesPage() {
 
       setModalOpen(false);
       fetchCerts();
+      void revalidatePortfolioCache();
     } catch (err: unknown) {
       setErrorMsg((err as Error).message);
     } finally {
@@ -214,6 +216,7 @@ export default function AdminCertificatesPage() {
       setCerts((prev) =>
         prev.map((item) => (item.id === c.id ? { ...item, is_hidden: nextHidden } : item))
       );
+      void revalidatePortfolioCache();
     } else {
       alert("Error updating visibility: " + error.message);
     }
@@ -225,6 +228,7 @@ export default function AdminCertificatesPage() {
     const { error } = await supabase.from("certificates").delete().eq("id", id);
     if (!error) {
       fetchCerts();
+      void revalidatePortfolioCache();
     } else {
       alert("Error deleting record: " + error.message);
     }
@@ -247,6 +251,7 @@ export default function AdminCertificatesPage() {
     const res = await reorderItems("certificates", prev, index, direction);
     if (res.success) {
       setCerts(res.newItems);
+      void revalidatePortfolioCache();
     } else {
       setCerts(prev);
       alert(res.error || "Failed to reorder certificates.");

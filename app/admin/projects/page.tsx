@@ -4,6 +4,7 @@ import { createClient } from "../../../utils/supabase/client";
 import { type Database } from "../../../types/database.types";
 import { reorderItems } from "../../../utils/supabase/reorder";
 import { optimizeImageToWebP } from "../../../utils/image";
+import { revalidatePortfolioCache } from "../../../utils/revalidate";
 import OrderControl from "../components/OrderControl";
 import AdminModal from "../components/AdminModal";
 import ProjectTypeSelect from "../components/ProjectTypeSelect";
@@ -369,6 +370,7 @@ export default function AdminProjectsPage() {
 
       setModalOpen(false);
       fetchProjects();
+      void revalidatePortfolioCache();
     } catch (err: unknown) {
       setErrorMsg((err as Error).message);
     } finally {
@@ -392,6 +394,7 @@ export default function AdminProjectsPage() {
       setProjects((prev) =>
         prev.map((item) => (item.id === p.id ? { ...item, is_hidden: nextHidden } : item))
       );
+      void revalidatePortfolioCache();
     } else {
       alert("Error updating visibility: " + error.message);
     }
@@ -403,6 +406,7 @@ export default function AdminProjectsPage() {
     const { error } = await supabase.from("projects").delete().eq("id", id);
     if (!error) {
       fetchProjects();
+      void revalidatePortfolioCache();
     } else {
       alert("Error deleting record: " + error.message);
     }
@@ -425,6 +429,7 @@ export default function AdminProjectsPage() {
     const res = await reorderItems("projects", prev, index, direction);
     if (res.success) {
       setProjects(res.newItems);
+      void revalidatePortfolioCache();
     } else {
       setProjects(prev);
       alert(res.error || "Failed to reorder projects.");

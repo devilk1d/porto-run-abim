@@ -4,6 +4,7 @@ import { createClient } from "../../../utils/supabase/client";
 import { type Database } from "../../../types/database.types";
 import { reorderItems } from "../../../utils/supabase/reorder";
 import { optimizeImageToWebP } from "../../../utils/image";
+import { revalidatePortfolioCache } from "../../../utils/revalidate";
 import OrderControl from "../components/OrderControl";
 import AdminModal from "../components/AdminModal";
 
@@ -88,6 +89,7 @@ export default function AdminAboutPage() {
       if (error) throw error;
       if (data) setProfileId(data.id);
     }
+    void revalidatePortfolioCache();
   };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -233,6 +235,7 @@ export default function AdminAboutPage() {
 
       setModalOpen(false);
       fetchChapters();
+      void revalidatePortfolioCache();
     } catch (err: unknown) {
       setErrorMsg((err as Error).message);
     } finally {
@@ -246,6 +249,7 @@ export default function AdminAboutPage() {
     const { error } = await supabase.from("about_chapters").delete().eq("id", id);
     if (!error) {
       fetchChapters();
+      void revalidatePortfolioCache();
     } else {
       alert("Error deleting record: " + error.message);
     }
@@ -268,6 +272,7 @@ export default function AdminAboutPage() {
     const res = await reorderItems("about_chapters", prev, index, direction);
     if (res.success) {
       setChapters(res.newItems);
+      void revalidatePortfolioCache();
     } else {
       setChapters(prev);
       alert(res.error || "Failed to reorder chapters.");

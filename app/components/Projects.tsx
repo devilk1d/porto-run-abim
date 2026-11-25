@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { motion, useTransform, useMotionValue, useMotionValueEvent, type MotionValue } from "motion/react";
+import { m, useTransform, useMotionValue, useMotionValueEvent, type MotionValue } from "motion/react";
 import { projects, GITHUB, type Project } from "../data";
 import Figure from "./Figures";
 import GitHubMark from "./GitHubMark";
@@ -47,7 +47,7 @@ function CardBody({ pr, i }: { pr: Project; i: number }) {
           ) : (
             <>
               {pr.live && <a className="btn dark" href={pr.live} target="_blank" rel="noreferrer">View live <span aria-hidden="true">↗</span></a>}
-              <a className="btn ghost gh" href={pr.github || GITHUB} target="_blank" rel="noreferrer" aria-label={`View ${pr.title} codebase on GitHub`}>
+              <a className="btn ghost gh" href={pr.github || GITHUB} target="_blank" rel="noreferrer" aria-label={`View codebase for ${pr.title} on GitHub`}>
                 <GitHubMark size={22} />
                 <span>View codebase</span>
               </a>
@@ -64,12 +64,12 @@ function StackCard({ i, s, pinned, front, children, label, total }: { i: number;
   const transform = useTransform(s, (v) => pose(i - v));
   const visibility = useTransform(s, (v) => (i - v <= -1 ? "hidden" : "visible"));
   return (
-    <motion.article className="pk-card" style={pinned ? { transform, visibility, zIndex: total + 1 - i } : undefined}
+    <m.article className="pk-card" style={pinned ? { transform, visibility, zIndex: total + 1 - i } : undefined}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       {...(pinned && !front ? ({ inert: true } as any) : {})}
       role="group" aria-roledescription="slide" aria-label={label}>
       {children}
-    </motion.article>
+    </m.article>
   );
 }
 
@@ -84,14 +84,14 @@ function WorkBackdrop({ p }: { p: MotionValue<number> }) {
   return (
     <div className="work-bg" aria-hidden="true">
       <div className="wb-grid" />
-      <motion.i className="wb-ring" style={{ x: far }} />
-      <motion.i className="wb-hatch" style={{ x: mid }} />
-      <motion.i className="wb-square" style={{ x: mid, rotate: spin }} />
-      <motion.span className="wb-glyph" style={{ x: near }}>{"{ }"}</motion.span>
-      <motion.svg className="wb-stairs" style={{ x: far }} viewBox="0 0 240 240">
+      <m.i className="wb-ring" style={{ x: far }} />
+      <m.i className="wb-hatch" style={{ x: mid }} />
+      <m.i className="wb-square" style={{ x: mid, rotate: spin }} />
+      <m.span className="wb-glyph" style={{ x: near }}>{"{ }"}</m.span>
+      <m.svg className="wb-stairs" style={{ x: far }} viewBox="0 0 240 240">
         {STAIRS.map(([c, r]) => <rect key={`${c}${r}`} x={c * 40} y={200 - r * 40} width="36" height="36" className={c === 5 && r === 5 ? "hot" : undefined} />)}
-      </motion.svg>
-      <motion.i className="wb-disc" style={{ x: near }} />
+      </m.svg>
+      <m.i className="wb-disc" style={{ x: near }} />
     </div>
   );
 }
@@ -119,10 +119,12 @@ export default function Projects({ items = projects }: { items?: Project[] }) {
   useLayoutEffect(apply, [apply]);
   useMotionValueEvent(s, "change", (v) => {
     if (!pinned) return;
-    setFront(Math.min(N, Math.round(v)));
+    const nextFront = Math.min(N, Math.round(v));
+    setFront((prev) => (prev === nextFront ? prev : nextFront));
     // While an arrow jump is travelling, keep showing its target (no flick back through the old numbers); free again on arrival.
     if (pending.current !== null) { if (Math.abs(v - pending.current) < 0.08) pending.current = null; return; }
-    setCurrent(Math.min(N - 1, Math.round(v)));
+    const nextCurrent = Math.min(N, Math.round(v));
+    setCurrent((prev) => (prev === nextCurrent ? prev : nextCurrent));
   });
 
   // ---- native mode (small screens / reduced motion): scroll-snap carousel of plain cards ----
@@ -133,7 +135,7 @@ export default function Projects({ items = projects }: { items?: Project[] }) {
     slides.forEach((sl, i) => {
       if (Math.abs(sl.offsetLeft - t.offsetLeft - t.scrollLeft) < Math.abs(slides[best].offsetLeft - t.offsetLeft - t.scrollLeft)) best = i;
     });
-    return Math.min(N - 1, best);
+    return Math.min(N, best);
   };
 
   useEffect(() => {
@@ -145,7 +147,10 @@ export default function Projects({ items = projects }: { items?: Project[] }) {
       pending.current = null;
       const i = nearest();
       setCurrent(i);
-      if (i !== settled) { settled = i; setStatus(`Project ${i + 1} of ${N}: ${list[i]?.title ?? ""}`); }
+      if (i !== settled) {
+        settled = i;
+        setStatus(i === N ? "View all projects card" : `Project ${i + 1} of ${N}: ${list[i]?.title ?? ""}`);
+      }
     };
     const onScroll = () => {
       if (pending.current === null) frame ||= requestAnimationFrame(() => { frame = 0; setCurrent(nearest()); });
@@ -157,7 +162,7 @@ export default function Projects({ items = projects }: { items?: Project[] }) {
   }, [pinned]);
 
   const go = (i: number, instant = false) => {
-    const target = Math.max(0, Math.min(N - 1, i));
+    const target = Math.max(0, Math.min(N, i));
     pending.current = target;
     setCurrent(target);
     if (pinned) {
@@ -165,7 +170,7 @@ export default function Projects({ items = projects }: { items?: Project[] }) {
       releaseTimer.current = window.setTimeout(() => { pending.current = null; }, 2500); // safety: free if the user scrolls away mid-jump
       if (Math.abs(s.get() - target) < 0.08) pending.current = null; // already there: nothing to wait for
       scrollToProgress(outer.current!, target / N, instant);
-      setStatus(`Project ${target + 1} of ${N}: ${list[target]?.title ?? ""}`);
+      setStatus(target === N ? "View all projects card" : `Project ${target + 1} of ${N}: ${list[target]?.title ?? ""}`);
       return;
     }
     const t = deck.current!;
@@ -192,8 +197,8 @@ export default function Projects({ items = projects }: { items?: Project[] }) {
   // Keep focus on a usable control when the focused one becomes disabled at an end.
   useEffect(() => {
     if (current === 0 && document.activeElement === prevBtn.current) nextBtn.current?.focus();
-    if (current === N - 1 && document.activeElement === nextBtn.current) prevBtn.current?.focus();
-  }, [current]);
+    if (current === N && document.activeElement === nextBtn.current) prevBtn.current?.focus();
+  }, [current, N]);
 
   const fill = useTransform(scrollYProgress, (v) => 0.04 + v * 0.96);
 
@@ -211,17 +216,17 @@ export default function Projects({ items = projects }: { items?: Project[] }) {
               <p className="pk-sub">Web apps, ML research and hardware — from thesis to side project.</p>
               <div className="pk-ctl">
                 <p className="pk-count" aria-hidden="true">
-                  <span className="pk-num"><motion.span key={current} initial={{ y: "60%", opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ type: "spring", stiffness: 380, damping: 30 }}>{pad(current + 1)}</motion.span></span>
+                  <span className="pk-num"><m.span key={current} initial={{ y: "60%", opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ type: "spring", stiffness: 380, damping: 30 }}>{current === N ? "ALL" : pad(current + 1)}</m.span></span>
                   <span className="mono small">/ {pad(N)}</span>
                 </p>
                 <div className="pk-arrows">
                   <button ref={prevBtn} type="button" className="arrow" onClick={() => go((pending.current ?? current) - 1)} disabled={current === 0} aria-label="Previous project">←</button>
-                  <button ref={nextBtn} type="button" className="arrow dark" onClick={() => go((pending.current ?? current) + 1)} disabled={current === N - 1} aria-label="Next project">→</button>
+                  <button ref={nextBtn} type="button" className="arrow dark" onClick={() => go((pending.current ?? current) + 1)} disabled={current === N} aria-label="Next project">→</button>
                 </div>
               </div>
               <div className="progress">
                 <div className="progress-track">
-                  {pinned ? <motion.i style={{ scaleX: fill }} /> : <i style={{ scale: `${(current + 1) / N} 1` }} />}
+                  {pinned ? <m.i style={{ scaleX: fill }} /> : <i style={{ scale: `${(current + 1) / (N + 1)} 1` }} />}
                 </div>
                 <p className="mono small">{pinned ? "scroll ↓ or use the arrow keys" : "swipe or use the arrows"}</p>
               </div>

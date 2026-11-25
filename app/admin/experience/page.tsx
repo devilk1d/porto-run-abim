@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "../../../utils/supabase/client";
 import { type Database } from "../../../types/database.types";
 import { reorderItems } from "../../../utils/supabase/reorder";
+import { revalidatePortfolioCache } from "../../../utils/revalidate";
 import OrderControl from "../components/OrderControl";
 import AdminModal from "../components/AdminModal";
 
@@ -127,6 +128,7 @@ export default function AdminExperiencePage() {
 
       setModalOpen(false);
       fetchExperiences();
+      void revalidatePortfolioCache();
     } catch (err: unknown) {
       setErrorMsg((err as Error).message);
     } finally {
@@ -150,6 +152,7 @@ export default function AdminExperiencePage() {
       setExperiences((prev) =>
         prev.map((item) => (item.id === exp.id ? { ...item, is_hidden: nextHidden } : item))
       );
+      void revalidatePortfolioCache();
     } else {
       alert("Error updating visibility: " + error.message);
     }
@@ -161,6 +164,7 @@ export default function AdminExperiencePage() {
     const { error } = await supabase.from("experiences").delete().eq("id", id);
     if (!error) {
       fetchExperiences();
+      void revalidatePortfolioCache();
     } else {
       alert("Error deleting record: " + error.message);
     }
@@ -183,6 +187,7 @@ export default function AdminExperiencePage() {
     const res = await reorderItems("experiences", prev, index, direction);
     if (res.success) {
       setExperiences(res.newItems);
+      void revalidatePortfolioCache();
     } else {
       setExperiences(prev);
       alert(res.error || "Failed to reorder experiences.");

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { motion, useMotionValue, useSpring } from "motion/react";
+import { m, useMotionValue, useSpring } from "motion/react";
 import { scrollToTarget } from "./scroll";
 
 /** In-page link that scrolls with the same animated, pin-aware scroll as the navbar (a plain #hash link jumps). */
@@ -26,7 +26,7 @@ export function Magnetic({ children, strength = 0.3 }: { children: React.ReactNo
   const ok = useRef(false);
   useEffect(() => { ok.current = matchMedia("(pointer: fine) and (prefers-reduced-motion: no-preference)").matches; }, []);
   return (
-    <motion.span ref={ref} className="magnetic" style={{ x, y }}
+    <m.span ref={ref} className="magnetic" style={{ x, y }}
       onPointerMove={(e) => {
         if (!ok.current) return;
         const r = ref.current!.getBoundingClientRect();
@@ -35,7 +35,7 @@ export function Magnetic({ children, strength = 0.3 }: { children: React.ReactNo
       }}
       onPointerLeave={() => { mx.set(0); my.set(0); }}>
       {children}
-    </motion.span>
+    </m.span>
   );
 }
 

@@ -1,5 +1,5 @@
 "use client";
-import { motion, useTransform, type MotionValue } from "motion/react";
+import { m, useTransform, type MotionValue } from "motion/react";
 
 // Contact's own backdrop: a pixel city under a lime sky, with a pixel rocket that lifts off as the section scrolls in ("ship it").
 // All squares sit on the same grid language as the ABIM mark.
@@ -58,13 +58,13 @@ export default function ContactScene({ progress }: { progress: MotionValue<numbe
       <span className="ct-cloud c2"><Pixels rows={CLOUD} /></span>
       <span className="ct-cloud c3"><Pixels rows={CLOUD} /></span>
 
-      <motion.div className="ct-rocket" style={{ y: lift }}>
+      <m.div className="ct-rocket" style={{ y: lift }}>
         <Pixels rows={ROCKET} />
         <span className="ct-flame">
           <i /><i /><i />
         </span>
         <span className="ct-trail"><i /><i /><i /><i /></span>
-      </motion.div>
+      </m.div>
 
       <svg className="ct-city" viewBox="0 0 1600 220" preserveAspectRatio="xMidYMax slice" shapeRendering="crispEdges">
         {CITY.map((b, i) => (

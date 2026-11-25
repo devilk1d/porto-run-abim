@@ -7,6 +7,7 @@ import { SmoothScroll } from "./components/scroll";
 import Backdrop from "./components/Backdrop";
 import { PageTransitionProvider } from "./components/PageTransition";
 import { ContactProvider } from "./components/ContactDialog";
+import MotionProvider from "./components/MotionProvider";
 
 const sans = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
@@ -37,7 +38,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </Script>
         <Backdrop />
         <SmoothScroll />
-        <PageTransitionProvider><ContactProvider>{children}</ContactProvider></PageTransitionProvider>
+        <MotionProvider>
+          <PageTransitionProvider><ContactProvider>{children}</ContactProvider></PageTransitionProvider>
+        </MotionProvider>
       </body>
     </html>
   );

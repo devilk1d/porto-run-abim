@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { motion } from "motion/react";
+import { m } from "motion/react";
 
 // A pile of draggable stack stickers. Each one is dragged by the outer motion.div (so the drag offset is not skewed by the tilt);
 // the tilt and look live on the inner .pile-s. Dragging is limited to the hero; the last one touched is raised to the top. No momentum: a sticker stays exactly where it is dropped.
@@ -33,12 +33,12 @@ export default function StackPile() {
       <ul className="sr-only" aria-label="Stack">{ITEMS.map((t) => <li key={t.id}>{t.label}</li>)}</ul>
       <div className={`pile${round ? " re" : ""}`} ref={root} aria-hidden="true">
         {ITEMS.map((t, i) => (
-          <motion.div key={`${t.id}-${round}`} className="pile-i" drag dragConstraints={bounds as React.RefObject<Element>} dragElastic={0.12}
+          <m.div key={`${t.id}-${round}`} className="pile-i" drag dragConstraints={bounds as React.RefObject<Element>} dragElastic={0.12}
             dragMomentum={false} whileHover={{ scale: 1.06 }} whileDrag={{ scale: 1.14 }}
             onPointerDown={() => raise(i)}
             style={{ left: `${t.x}rem`, top: `${t.y}rem`, width: `${t.s}rem`, height: `${t.s}rem`, zIndex: 20 + z[i] }}>
             <div className="pile-s" style={{ rotate: `${t.r}deg`, "--k": i } as React.CSSProperties}><img src={`/stack/${FILES[t.id]}.svg`} alt="" width={64} height={64} decoding="async" draggable={false} /></div>
-          </motion.div>
+          </m.div>
         ))}
       </div>
       <div className="pile-foot mono">

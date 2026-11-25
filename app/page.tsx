@@ -20,6 +20,8 @@ import { getProjects, getCertificates, getExperiences, getAboutChapters, getAbou
 
 const nav: [string, string][] = [["About", "#about"], ["Experience", "#experience"], ["Stack", "#stack"], ["Projects", "#projects"], ["Certificates", "#certificates"]];
 
+export const revalidate = 3600;
+
 export default async function Home() {
   const [projectsData, certificatesData, experiencesData, aboutChaptersData, aboutProfile] = await Promise.all([
     getProjects(),

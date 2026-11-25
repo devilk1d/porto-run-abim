@@ -490,6 +490,7 @@
   align-items: center;
   justify-content: center;
   padding: 20px;
+  overflow-y: auto;
   overscroll-behavior: contain;
 }
 
@@ -500,7 +501,9 @@
   background: light-dark(#ffffff, #0a0b0c);
   color: var(--ink);
   box-shadow: 10px 10px 0 var(--accent);
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   overscroll-behavior: contain;
 }
 
@@ -514,6 +517,7 @@
   font-family: var(--mono);
   font-size: 12px;
   background: light-dark(#f7f7f7, #121416);
+  flex-shrink: 0;
 }
 
 .admin-modal-bar i {
@@ -552,6 +556,29 @@
 
 .admin-modal-content {
   padding: 28px 32px 24px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Custom crisp scrollbar for modal content */
+.admin-modal-content::-webkit-scrollbar {
+  width: 7px;
+}
+
+.admin-modal-content::-webkit-scrollbar-track {
+  background: light-dark(#f3f3f3, #141618);
+  border-left: 1px solid var(--line);
+}
+
+.admin-modal-content::-webkit-scrollbar-thumb {
+  background: light-dark(#cccccc, #2c2f33);
+  border: 1px solid var(--ink);
+}
+
+.admin-modal-content::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
 }
 
 .admin-modal-foot {
@@ -622,6 +649,50 @@
   background: light-dark(#f6ffed, #162312);
   border-color: #52c41a;
   color: #52c41a;
+}
+
+/* Reorder Button Controls */
+.admin-reorder-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-reorder-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-reorder-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 17px;
+  font-family: var(--mono);
+  font-size: 9px;
+  background: light-dark(#f8f8f8, #181a1c);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.12s ease;
+  line-height: 1;
+  padding: 0;
+}
+
+.admin-reorder-btn:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--ink);
+  transform: scale(1.08);
+}
+
+.admin-reorder-btn:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* Responsive Rules */

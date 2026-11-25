@@ -19,17 +19,22 @@ export const metadata: Metadata = {
 
 // Applies a stored theme override before first paint (no flash of the wrong scheme).
 const themeScript = `try{document.querySelector('meta[name="color-scheme"]').content=localStorage.getItem("color-scheme")??"light dark"}catch(e){}`;
+const supabaseOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL
+  ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin
+  : null;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${sans.variable} ${mono.variable} ${cond.variable}`} suppressHydrationWarning>
       <head>
         <meta name="color-scheme" content="light dark" />
+        {supabaseOrigin && <link rel="preconnect" href={supabaseOrigin} crossOrigin="anonymous" />}
+        {supabaseOrigin && <link rel="dns-prefetch" href={supabaseOrigin} />}
+      </head>
+      <body>
         <Script id="theme-script" strategy="beforeInteractive">
           {themeScript}
         </Script>
-      </head>
-      <body>
         <Backdrop />
         <SmoothScroll />
         <PageTransitionProvider><ContactProvider>{children}</ContactProvider></PageTransitionProvider>

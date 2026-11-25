@@ -16,16 +16,17 @@ import { ContactTrigger } from "./components/ContactDialog";
 import { PixelArrow } from "./components/Logo";
 import { Magnetic, ScrollLink } from "./components/Extras";
 import { stackMarquee, outputsMarquee } from "./data";
-import { getProjects, getCertificates, getExperiences, getAboutChapters } from "../utils/supabase/queries";
+import { getProjects, getCertificates, getExperiences, getAboutChapters, getAboutProfile } from "../utils/supabase/queries";
 
 const nav: [string, string][] = [["About", "#about"], ["Experience", "#experience"], ["Stack", "#stack"], ["Projects", "#projects"], ["Certificates", "#certificates"]];
 
 export default async function Home() {
-  const [projectsData, certificatesData, experiencesData, aboutChaptersData] = await Promise.all([
+  const [projectsData, certificatesData, experiencesData, aboutChaptersData, aboutProfile] = await Promise.all([
     getProjects(),
     getCertificates(),
     getExperiences(),
     getAboutChapters(),
+    getAboutProfile(),
   ]);
 
   return (
@@ -64,7 +65,11 @@ export default async function Home() {
         </section>
 
         <Statement />
-        <About items={aboutChaptersData} />
+        <About
+          items={aboutChaptersData}
+          photoUrl={aboutProfile.photoUrl}
+          photoAlt={aboutProfile.photoAlt}
+        />
 
         <Experience items={experiencesData} />
 

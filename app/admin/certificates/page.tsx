@@ -2,6 +2,10 @@
 import { useEffect, useState } from "react";
 import { createClient } from "../../../utils/supabase/client";
 import { type Database } from "../../../types/database.types";
+import { reorderItems } from "../../../utils/supabase/reorder";
+import { optimizeImageToWebP } from "../../../utils/image";
+import OrderControl from "../components/OrderControl";
+import AdminModal from "../components/AdminModal";
 
 type CertRow = Database["public"]["Tables"]["certificates"]["Row"];
 
@@ -24,6 +28,54 @@ export default function AdminCertificatesPage() {
   });
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError("File size exceeds 10MB limit.");
+      return;
+    }
+
+    setUploading(true);
+    setUploadError(null);
+
+    try {
+      const supabase = createClient();
+      const optimized = await optimizeImageToWebP(file, {
+        maxDimension: 1600,
+        quality: 0.88,
+      });
+      const cleanName = file.name
+        .replace(/\.[^/.]+$/, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "-");
+      const filePath = `certs/${Date.now()}-${cleanName}.${optimized.ext}`;
+
+      const { error: uploadErr } = await supabase.storage
+        .from("certificates")
+        .upload(filePath, optimized.file, {
+          upsert: true,
+          contentType: optimized.contentType,
+          cacheControl: "31536000",
+        });
+
+      if (uploadErr) throw uploadErr;
+
+      const { data: urlData } = supabase.storage
+        .from("certificates")
+        .getPublicUrl(filePath);
+
+      setForm((prev) => ({ ...prev, image_url: urlData.publicUrl }));
+    } catch (err: unknown) {
+      setUploadError((err as Error).message || "Failed to upload image.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const fetchCerts = async () => {
     setLoading(true);
@@ -58,6 +110,8 @@ export default function AdminCertificatesPage() {
       is_featured: true,
     });
     setErrorMsg(null);
+    setUploadError(null);
+    setUploading(false);
     setModalOpen(true);
   };
 
@@ -76,6 +130,8 @@ export default function AdminCertificatesPage() {
       is_featured: c.is_featured,
     });
     setErrorMsg(null);
+    setUploadError(null);
+    setUploading(false);
     setModalOpen(true);
   };
 
@@ -143,6 +199,30 @@ export default function AdminCertificatesPage() {
     }
   };
 
+  const [reordering, setReordering] = useState(false);
+
+  const handleReorder = async (index: number, direction: "up" | "down") => {
+    if (reordering) return;
+    setReordering(true);
+    const prev = certs;
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex >= 0 && targetIndex < certs.length) {
+      const swapped = [...certs];
+      const tmp = swapped[index];
+      swapped[index] = swapped[targetIndex];
+      swapped[targetIndex] = tmp;
+      setCerts(swapped.map((it, idx) => ({ ...it, order_index: idx })));
+    }
+    const res = await reorderItems("certificates", prev, index, direction);
+    if (res.success) {
+      setCerts(res.newItems);
+    } else {
+      setCerts(prev);
+      alert(res.error || "Failed to reorder certificates.");
+    }
+    setReordering(false);
+  };
+
   return (
     <div>
       <div className="admin-head">
@@ -184,7 +264,7 @@ export default function AdminCertificatesPage() {
             <table className="admin-tbl">
               <thead>
                 <tr>
-                  <th style={{ width: "60px" }}>Idx</th>
+                  <th style={{ width: "80px" }}>Idx</th>
                   <th>Title & Issuer</th>
                   <th>Year / Validity</th>
                   <th>Credential ID</th>
@@ -193,9 +273,17 @@ export default function AdminCertificatesPage() {
                 </tr>
               </thead>
               <tbody>
-                {certs.map((c) => (
+                {certs.map((c, i) => (
                   <tr key={c.id}>
-                    <td className="mono muted">{String(c.order_index).padStart(2, "0")}</td>
+                    <td>
+                      <OrderControl
+                        index={i}
+                        total={certs.length}
+                        disabled={reordering}
+                        onMoveUp={() => handleReorder(i, "up")}
+                        onMoveDown={() => handleReorder(i, "down")}
+                      />
+                    </td>
                     <td>
                       <b style={{ display: "block" }}>{c.title}</b>
                       <span className="mono small muted">{c.issuer}</span>
@@ -244,27 +332,14 @@ export default function AdminCertificatesPage() {
         )}
       </div>
 
-      {modalOpen && (
-        <div className="admin-overlay" role="dialog" aria-modal="true">
-          <div className="admin-modal-window">
-            <div className="admin-modal-bar">
-              <i />
-              <i />
-              <i />
-              <span>~/certificates/edit.form</span>
-              <button
-                type="button"
-                className="close-pill"
-                onClick={() => setModalOpen(false)}
-              >
-                [close esc]
-              </button>
-            </div>
+      <AdminModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={`~/certificates/${editingCert ? "edit" : "new"}.form`}
+      >
+        {errorMsg && <div className="admin-alert error">{errorMsg}</div>}
 
-            <div className="admin-modal-content">
-              {errorMsg && <div className="admin-alert error">{errorMsg}</div>}
-
-              <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit}>
                 <div className="admin-field">
                   <label htmlFor="c-title">Certificate Title</label>
                   <input
@@ -353,28 +428,119 @@ export default function AdminCertificatesPage() {
                   </div>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 100px", gap: "14px" }}>
-                  <div className="admin-field">
-                    <label htmlFor="c-img">Certificate Asset Path (optional)</label>
-                    <input
-                      id="c-img"
-                      className="mono"
-                      value={form.image_url}
-                      onChange={(e) => setForm({ ...form, image_url: e.target.value })}
-                      placeholder="/certs/meta-cert.webp"
-                    />
-                  </div>
+                <div className="admin-field">
+                  <label>Certificate Image / Document Asset</label>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+                      <label
+                        className={`admin-btn ${uploading ? "disabled" : "primary"}`}
+                        style={{ cursor: uploading ? "wait" : "pointer" }}
+                      >
+                        {uploading ? "Uploading to Supabase..." : "↑ Upload Asset to Storage Bucket"}
+                        <input
+                          type="file"
+                          accept="image/*,application/pdf"
+                          style={{ display: "none" }}
+                          disabled={uploading}
+                          onChange={handleFileUpload}
+                        />
+                      </label>
+                      {form.image_url && (
+                        <button
+                          type="button"
+                          className="admin-btn sm danger"
+                          onClick={() => setForm({ ...form, image_url: "" })}
+                        >
+                          Remove Asset
+                        </button>
+                      )}
+                    </div>
 
-                  <div className="admin-field">
-                    <label htmlFor="c-order">Order</label>
-                    <input
-                      id="c-order"
-                      type="number"
-                      required
-                      className="mono"
-                      value={form.order_index}
-                      onChange={(e) => setForm({ ...form, order_index: Number(e.target.value) })}
-                    />
+                    {uploadError && (
+                      <div className="admin-alert error" style={{ padding: "8px 12px", margin: 0 }}>
+                        {uploadError}
+                      </div>
+                    )}
+
+                    {form.image_url && (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "12px",
+                          padding: "10px 14px",
+                          background: "var(--paper)",
+                          border: "1px solid var(--line)",
+                        }}
+                      >
+                        {form.image_url.endsWith(".pdf") ? (
+                          <div
+                            className="mono small bold"
+                            style={{
+                              padding: "8px 12px",
+                              background: "var(--paper2)",
+                              border: "1px solid var(--line)",
+                            }}
+                          >
+                            [PDF DOCUMENT]
+                          </div>
+                        ) : (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={form.image_url}
+                            alt="Certificate Preview"
+                            loading="lazy"
+                            decoding="async"
+                            style={{
+                              width: "60px",
+                              height: "44px",
+                              objectFit: "cover",
+                              border: "1px solid var(--line)",
+                              background: "#fff",
+                            }}
+                          />
+                        )}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <span className="mono small muted" style={{ display: "block" }}>
+                            Bucket Asset Link:
+                          </span>
+                          <a
+                            href={form.image_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mono small link-u"
+                            style={{ wordBreak: "break-all", display: "inline-block", maxWidth: "100%" }}
+                          >
+                            {form.image_url}
+                          </a>
+                        </div>
+                      </div>
+                    )}
+
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 100px", gap: "14px" }}>
+                      <div className="admin-field" style={{ marginBottom: 0 }}>
+                        <label htmlFor="c-img">Direct Path / External URL</label>
+                        <input
+                          id="c-img"
+                          className="mono"
+                          value={form.image_url}
+                          onChange={(e) => setForm({ ...form, image_url: e.target.value })}
+                          placeholder="/certs/meta-cert.webp or https://..."
+                        />
+                      </div>
+
+                      <div className="admin-field" style={{ marginBottom: 0 }}>
+                        <label htmlFor="c-order">Order</label>
+                        <input
+                          id="c-order"
+                          type="number"
+                          required
+                          className="mono"
+                          value={form.order_index}
+                          onChange={(e) => setForm({ ...form, order_index: Number(e.target.value) })}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -391,10 +557,7 @@ export default function AdminCertificatesPage() {
                   </button>
                 </div>
               </form>
-            </div>
-          </div>
-        </div>
-      )}
+      </AdminModal>
     </div>
   );
 }

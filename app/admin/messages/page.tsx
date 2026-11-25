@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "../../../utils/supabase/client";
 import { type Database } from "../../../types/database.types";
+import AdminModal from "../components/AdminModal";
 
 type MessageRow = Database["public"]["Tables"]["contact_messages"]["Row"];
 
@@ -186,70 +187,58 @@ export default function AdminMessagesPage() {
         )}
       </div>
 
-      {selectedMessage && (
-        <div className="admin-overlay" role="dialog" aria-modal="true">
-          <div className="admin-modal-window">
-            <div className="admin-modal-bar">
-              <i />
-              <i />
-              <i />
-              <span>~/messages/inquiry-details.md</span>
+      <AdminModal
+        isOpen={Boolean(selectedMessage)}
+        onClose={() => setSelectedMessage(null)}
+        title="~/messages/inquiry-details.md"
+      >
+        {selectedMessage && (
+          <>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "18px" }}>
+              <div>
+                <h2 style={{ fontSize: "22px", fontWeight: "700" }}>{selectedMessage.name}</h2>
+                <p className="mono small muted" style={{ marginTop: "4px" }}>
+                  Sender: <a href={`mailto:${selectedMessage.email}`} className="link-u">{selectedMessage.email}</a>
+                </p>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <span className="chip accent" style={{ display: "block", marginBottom: "4px" }}>{selectedMessage.topic}</span>
+                <span className="mono small muted">{new Date(selectedMessage.created_at).toLocaleString()}</span>
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: "var(--paper)",
+                border: "1px solid var(--ink)",
+                padding: "20px",
+                whiteSpace: "pre-wrap",
+                lineHeight: 1.6,
+                fontSize: "14px",
+                boxShadow: "4px 4px 0 var(--line)",
+              }}
+            >
+              {selectedMessage.message}
+            </div>
+
+            <div className="admin-modal-foot">
+              <a
+                href={`mailto:${selectedMessage.email}?subject=${encodeURIComponent(`Re: [abim.run] ${selectedMessage.topic}`)}`}
+                className="admin-btn primary"
+              >
+                Reply via Email ↗
+              </a>
               <button
                 type="button"
-                className="close-pill"
+                className="admin-btn"
                 onClick={() => setSelectedMessage(null)}
               >
-                [close esc]
+                Done
               </button>
             </div>
-
-            <div className="admin-modal-content">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "18px" }}>
-                <div>
-                  <h2 style={{ fontSize: "22px", fontWeight: "700" }}>{selectedMessage.name}</h2>
-                  <p className="mono small muted" style={{ marginTop: "4px" }}>
-                    Sender: <a href={`mailto:${selectedMessage.email}`} className="link-u">{selectedMessage.email}</a>
-                  </p>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <span className="chip accent" style={{ display: "block", marginBottom: "4px" }}>{selectedMessage.topic}</span>
-                  <span className="mono small muted">{new Date(selectedMessage.created_at).toLocaleString()}</span>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  background: "var(--paper)",
-                  border: "1px solid var(--ink)",
-                  padding: "20px",
-                  whiteSpace: "pre-wrap",
-                  lineHeight: 1.6,
-                  fontSize: "14px",
-                  boxShadow: "4px 4px 0 var(--line)",
-                }}
-              >
-                {selectedMessage.message}
-              </div>
-
-              <div className="admin-modal-foot">
-                <a
-                  href={`mailto:${selectedMessage.email}?subject=${encodeURIComponent(`Re: [abim.run] ${selectedMessage.topic}`)}`}
-                  className="admin-btn primary"
-                >
-                  Reply via Email ↗
-                </a>
-                <button
-                  type="button"
-                  className="admin-btn"
-                  onClick={() => setSelectedMessage(null)}
-                >
-                  Done
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </AdminModal>
     </div>
   );
 }

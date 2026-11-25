@@ -2,6 +2,9 @@
 import { useEffect, useState } from "react";
 import { createClient } from "../../../utils/supabase/client";
 import { type Database } from "../../../types/database.types";
+import { reorderItems } from "../../../utils/supabase/reorder";
+import OrderControl from "../components/OrderControl";
+import AdminModal from "../components/AdminModal";
 
 type ExpRow = Database["public"]["Tables"]["experiences"]["Row"];
 
@@ -132,6 +135,30 @@ export default function AdminExperiencePage() {
     }
   };
 
+  const [reordering, setReordering] = useState(false);
+
+  const handleReorder = async (index: number, direction: "up" | "down") => {
+    if (reordering) return;
+    setReordering(true);
+    const prev = experiences;
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex >= 0 && targetIndex < experiences.length) {
+      const swapped = [...experiences];
+      const tmp = swapped[index];
+      swapped[index] = swapped[targetIndex];
+      swapped[targetIndex] = tmp;
+      setExperiences(swapped.map((it, idx) => ({ ...it, order_index: idx })));
+    }
+    const res = await reorderItems("experiences", prev, index, direction);
+    if (res.success) {
+      setExperiences(res.newItems);
+    } else {
+      setExperiences(prev);
+      alert(res.error || "Failed to reorder experiences.");
+    }
+    setReordering(false);
+  };
+
   return (
     <div>
       <div className="admin-head">
@@ -173,7 +200,7 @@ export default function AdminExperiencePage() {
             <table className="admin-tbl">
               <thead>
                 <tr>
-                  <th style={{ width: "60px" }}>Idx</th>
+                  <th style={{ width: "80px" }}>Idx</th>
                   <th>Chapter</th>
                   <th>Commit Title & Scope</th>
                   <th>Graph Topology</th>
@@ -182,9 +209,17 @@ export default function AdminExperiencePage() {
                 </tr>
               </thead>
               <tbody>
-                {experiences.map((exp) => (
+                {experiences.map((exp, i) => (
                   <tr key={exp.id}>
-                    <td className="mono muted">{String(exp.order_index).padStart(2, "0")}</td>
+                    <td>
+                      <OrderControl
+                        index={i}
+                        total={experiences.length}
+                        disabled={reordering}
+                        onMoveUp={() => handleReorder(i, "up")}
+                        onMoveDown={() => handleReorder(i, "down")}
+                      />
+                    </td>
                     <td>
                       <span className="chip accent" style={{ marginRight: "6px" }}>{exp.label}</span>
                       <span className="mono small muted">{exp.chapter_num}</span>
@@ -239,27 +274,14 @@ export default function AdminExperiencePage() {
         )}
       </div>
 
-      {modalOpen && (
-        <div className="admin-overlay" role="dialog" aria-modal="true">
-          <div className="admin-modal-window">
-            <div className="admin-modal-bar">
-              <i />
-              <i />
-              <i />
-              <span>~/experience/commit.form</span>
-              <button
-                type="button"
-                className="close-pill"
-                onClick={() => setModalOpen(false)}
-              >
-                [close esc]
-              </button>
-            </div>
+      <AdminModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={`~/experience/${editingExp ? "edit" : "new"}-commit.form`}
+      >
+        {errorMsg && <div className="admin-alert error">{errorMsg}</div>}
 
-            <div className="admin-modal-content">
-              {errorMsg && <div className="admin-alert error">{errorMsg}</div>}
-
-              <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
                   <div className="admin-field">
                     <label htmlFor="e-label">Label Code</label>
@@ -358,10 +380,7 @@ export default function AdminExperiencePage() {
                   </button>
                 </div>
               </form>
-            </div>
-          </div>
-        </div>
-      )}
+      </AdminModal>
     </div>
   );
 }

@@ -51,6 +51,8 @@ export type Project = {
   role: string; type: string; stack: string; fig: string;
   context: string; built: string;
   live?: string; // only set where a live site exists
+  github?: string; // project-specific repository URL
+  is_private?: boolean; // true for private/internal systems with no public links
   shots?: { src: string; alt: string }[]; // up to three app screenshots, fanned in the card (placeholder figure otherwise)
   accent?: string; // background of the screenshot area
 };
@@ -58,11 +60,7 @@ export type Project = {
 export const projects: Project[] = [
   {
     slug: "nextlap", live: "https://nextlap.live", accent: "#F2701C",
-    shots: [
-      { src: "/work/nextlap-overview.webp", alt: "Next Lap race overview: gap to leader, lap time spread and team pace" },
-      { src: "/work/nextlap-circuit.webp", alt: "Next Lap circuit and driver picker with a 3D track" },
-      { src: "/work/nextlap-replay.webp", alt: "Next Lap lap replay dashboard with live track map, telemetry and lap times" },
-    ], title: "Next Lap", label: "WEB · THESIS", fig: "fig.01 — next lap",
+    title: "Next Lap", label: "WEB · THESIS", fig: "fig.01 — next lap",
     tagline: "F1 lap times, predicted and visualised.",
     desc: "Pick a race and driver, see predicted vs actual lap times, and compare how the LSTM and GRU models behave across a stint.",
     role: "full-stack, solo", type: "web app · thesis", stack: "next.js · python · lstm/gru",

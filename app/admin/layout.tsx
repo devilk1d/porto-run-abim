@@ -53,7 +53,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="admin-shell">
+    <div className="admin-shell" data-lenis-prevent>
       <header className="admin-nav-bar">
         <div className="admin-nav-pill">
           <Link href="/admin" className="logo" aria-label="Console home">

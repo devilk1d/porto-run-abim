@@ -45,13 +45,17 @@ export async function getProjects(): Promise<Project[]> {
       fig: p.fig || `fig.01 — ${p.slug}`,
       context: p.context,
       built: p.built,
-      live: p.live_url || undefined,
+      live: p.is_private ? undefined : (p.live_url || undefined),
+      github: p.is_private ? undefined : (p.github_url || undefined),
+      is_private: p.is_private ?? false,
       accent: p.accent_color || undefined,
       shots:
         p.project_shots && p.project_shots.length > 0
           ? p.project_shots
               .sort((a, b) => a.order_index - b.order_index)
               .map((s) => ({ src: s.src, alt: s.alt }))
+          : p.image_url
+          ? [{ src: p.image_url, alt: p.title }]
           : undefined,
     }));
   } catch {
@@ -124,5 +128,32 @@ export async function getAboutChapters(): Promise<AboutChapter[]> {
     }));
   } catch {
     return defaultAbout;
+  }
+}
+
+export type AboutProfile = {
+  photoUrl: string | null;
+  photoAlt: string;
+};
+
+export async function getAboutProfile(): Promise<AboutProfile> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("about_profile")
+      .select("photo_url, photo_alt")
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data) {
+      return { photoUrl: null, photoAlt: "Abim portrait" };
+    }
+
+    return {
+      photoUrl: data.photo_url || null,
+      photoAlt: data.photo_alt || "Abim portrait",
+    };
+  } catch {
+    return { photoUrl: null, photoAlt: "Abim portrait" };
   }
 }

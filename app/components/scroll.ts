@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, type RefObject } from "react";
+import { usePathname } from "next/navigation";
 import { useMotionValue } from "motion/react";
 import Lenis from "lenis";
 
@@ -29,14 +30,26 @@ export function setProgrammaticScrolling(durationMs = 1200) {
 
 /** Smooth scrolling (Lenis). Skipped for reduced motion. Mounted once from the layout. */
 export function SmoothScroll() {
+  const pathname = usePathname();
+
   useEffect(() => {
     if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
       window.history.scrollRestoration = "manual";
     }
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (pathname?.startsWith("/admin")) {
+      if (lenis) {
+        lenis.destroy();
+        lenis = null;
+      }
+      return;
+    }
     lenis = new Lenis({ autoRaf: true, duration: 1.35, gestureOrientation: "both", anchors: { offset: -88 } });
-    return () => { lenis?.destroy(); lenis = null; };
-  }, []);
+    return () => {
+      lenis?.destroy();
+      lenis = null;
+    };
+  }, [pathname]);
   return null;
 }
 

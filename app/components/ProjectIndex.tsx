@@ -29,10 +29,22 @@ function Preview({ p, index }: { p: Project; index: number }) {
         <p className="desc">{p.desc}</p>
         <ul className="chips">{p.stack.split(" · ").map((t) => <li key={t} className="mono">{t}</li>)}</ul>
         <div className="ap-act">
-          {p.live && <a className="btn dark" href={p.live} target="_blank" rel="noreferrer">View live <span aria-hidden="true">↗</span></a>}
-          <a className="btn ghost" href={GITHUB} target="_blank" rel="noreferrer">
-            <GitHubMark size={18} />View codebase
-          </a>
+          {p.is_private ? (
+            <span className="pk-private mono small" aria-label="Private or internal project">
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+                <rect x="3" y="7" width="10" height="7" />
+                <path d="M5 7V5a3 3 0 0 1 6 0v2" />
+              </svg>
+              <span>PRIVATE · INTERNAL</span>
+            </span>
+          ) : (
+            <>
+              {p.live && <a className="btn dark" href={p.live} target="_blank" rel="noreferrer">View live <span aria-hidden="true">↗</span></a>}
+              <a className="btn ghost" href={p.github || GITHUB} target="_blank" rel="noreferrer">
+                <GitHubMark size={18} />View codebase
+              </a>
+            </>
+          )}
         </div>
         <details className="ap-more">
           <summary className="mono small">context and what I built</summary>

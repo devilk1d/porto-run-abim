@@ -36,11 +36,23 @@ function CardBody({ pr, i }: { pr: Project; i: number }) {
           <ul className="chips">{pr.stack.split(" · ").map((t) => <li key={t} className="mono">{t}</li>)}</ul>
         </div>
         <div className="pk-act">
-          {pr.live && <a className="btn dark" href={pr.live} target="_blank" rel="noreferrer">View live <span aria-hidden="true">↗</span></a>}
-          <a className="btn ghost gh" href={GITHUB} target="_blank" rel="noreferrer" aria-label={`View ${pr.title} codebase on GitHub`}>
-            <GitHubMark size={22} />
-            <span>View codebase</span>
-          </a>
+          {pr.is_private ? (
+            <span className="pk-private mono small" aria-label="Private or internal project">
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+                <rect x="3" y="7" width="10" height="7" />
+                <path d="M5 7V5a3 3 0 0 1 6 0v2" />
+              </svg>
+              <span>PRIVATE · INTERNAL</span>
+            </span>
+          ) : (
+            <>
+              {pr.live && <a className="btn dark" href={pr.live} target="_blank" rel="noreferrer">View live <span aria-hidden="true">↗</span></a>}
+              <a className="btn ghost gh" href={pr.github || GITHUB} target="_blank" rel="noreferrer" aria-label={`View ${pr.title} codebase on GitHub`}>
+                <GitHubMark size={22} />
+                <span>View codebase</span>
+              </a>
+            </>
+          )}
         </div>
       </div>
     </>
@@ -85,7 +97,8 @@ function WorkBackdrop({ p }: { p: MotionValue<number> }) {
 }
 
 export default function Projects({ items = projects }: { items?: Project[] }) {
-  const list = items && items.length > 0 ? items : projects;
+  const allItems = items && items.length > 0 ? items : projects;
+  const list = allItems.slice(0, 5);
   const N = list.length;
   const outer = useRef<HTMLElement>(null);
   const deck = useRef<HTMLDivElement>(null);
@@ -222,7 +235,7 @@ export default function Projects({ items = projects }: { items?: Project[] }) {
               ))}
               <StackCard i={N} s={s} pinned={pinned} front={front === N} label="All projects" total={N}>
                 <TransitionLink href="/all-projects" label="all projects" className="pk-cta">
-                  <span className="mono small">[{pad(N)}] projects, one page</span>
+                  <span className="mono small">[{pad(allItems.length)}] projects, one page</span>
                   <span className="pk-cta-t">View all<br />projects</span>
                   <span className="btn accent">Open the full list <span aria-hidden="true">→</span></span>
                 </TransitionLink>

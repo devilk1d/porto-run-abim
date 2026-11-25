@@ -39,7 +39,15 @@ function Chapter({ item, words, hlFlags }: { item: AboutItem; words: string[]; h
 
 // Normal page flow: the ID card stays put (sticky) while the four chapters scroll past on the right, each one reading itself in
 // as it crosses the screen. The photo sharpens as the section comes into view.
-export default function About({ items = about }: { items?: AboutItem[] }) {
+export default function About({
+  items = about,
+  photoUrl = null,
+  photoAlt = "Abim portrait",
+}: {
+  items?: AboutItem[];
+  photoUrl?: string | null;
+  photoAlt?: string;
+}) {
   const outer = useRef<HTMLElement>(null);
   const body = useRef<HTMLDivElement>(null);
   const [amount, setAmount] = useState(0);
@@ -67,7 +75,7 @@ export default function About({ items = about }: { items?: AboutItem[] }) {
           <span className="idcard-hole" aria-hidden="true" />
           <figcaption className="idcard-head mono small"><span>abim.run · developer</span><span>KUALA LUMPUR</span></figcaption>
           <div className="idcard-photo">
-            <PixelPhoto amount={amount} alt="Abim with friends at a night event, holding a laptop" />
+            <PixelPhoto src={photoUrl} amount={amount} alt={photoAlt} />
             <i className="cross tl" /><i className="cross tr" /><i className="cross bl" /><i className="cross br" />
           </div>
           <p className="idcard-name">Abim</p>

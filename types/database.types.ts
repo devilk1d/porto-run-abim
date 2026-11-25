@@ -44,6 +44,27 @@ export type Database = {
         }
         Relationships: []
       }
+      about_profile: {
+        Row: {
+          id: string
+          photo_alt: string
+          photo_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          photo_alt?: string
+          photo_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          photo_alt?: string
+          photo_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       certificates: {
         Row: {
           created_at: string
@@ -206,7 +227,9 @@ export type Database = {
           fig: string | null
           github_url: string | null
           id: string
+          image_url: string | null
           is_featured: boolean
+          is_private: boolean
           label: string
           live_url: string | null
           order_index: number
@@ -227,7 +250,9 @@ export type Database = {
           fig?: string | null
           github_url?: string | null
           id?: string
+          image_url?: string | null
           is_featured?: boolean
+          is_private?: boolean
           label: string
           live_url?: string | null
           order_index?: number
@@ -248,7 +273,9 @@ export type Database = {
           fig?: string | null
           github_url?: string | null
           id?: string
+          image_url?: string | null
           is_featured?: boolean
+          is_private?: boolean
           label?: string
           live_url?: string | null
           order_index?: number

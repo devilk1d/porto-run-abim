@@ -96,7 +96,7 @@ export default function StackSection({ children }: { children: React.ReactNode }
                   <li key={it} className="sx-tile" style={{ "--i": i } as React.CSSProperties}>
                     <span className="sx-idx mono" aria-hidden="true">0{i + 1}</span>
                     <span className="sx-ic" aria-hidden="true">
-                      {icon ? <svg viewBox="0 0 24 24"><path d={icon.path} fill={brand(icon)} /></svg> : IMAGES[it] ? <img src={IMAGES[it]} alt="" width={40} height={40} /> : <b className="mono">{TAGS[it] ?? it.slice(0, 3).toUpperCase()}</b>}
+                      {icon ? <svg viewBox="0 0 24 24"><path d={icon.path} fill={brand(icon)} /></svg> : IMAGES[it] ? <img src={IMAGES[it]} alt="" width={40} height={40} loading="lazy" decoding="async" /> : <b className="mono">{TAGS[it] ?? it.slice(0, 3).toUpperCase()}</b>}
                     </span>
                     <span className="sx-name">{it}</span>
                   </li>

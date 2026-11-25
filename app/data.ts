@@ -1,8 +1,8 @@
 // All copy comes from FigCraft page "C1 — Option C · Prototype + Components".
 
-export const GITHUB = "https://github.com/";
-export const LINKEDIN = "https://www.linkedin.com/";
-export const EMAIL = "hello@abim.run";
+export const GITHUB = "https://github.com/devilk1d/";
+export const LINKEDIN = "https://www.linkedin.com/in/ibnuabimanyu/";
+export const EMAIL = "abimanyu123em@gmail.com";
 
 export const about = [
   { k: "01 / WHO", p: "I'm Abim — a full-stack developer working across web, mobile and machine learning. I study at Management and Science University in Kuala Lumpur, and I'm originally from Indonesia.", hl: ["full-stack developer", "web, mobile and machine learning", "Indonesia"] },
@@ -11,11 +11,20 @@ export const about = [
   { k: "04 / STACK", p: "Mostly TypeScript, Next.js and React on the web, Python for data and ML, and SQL underneath everything. I care about clean interfaces and code that holds up.", hl: ["TypeScript, Next.js and React", "Python", "SQL", "clean interfaces"] },
 ];
 
-export const timeline = [
-  { label: "NOW", num: "chapter 04", title: "Student at Management and Science University", desc: "Kuala Lumpur, Malaysia — open to internships and collaborations.", tags: ["web", "ml", "mobile"] },
-  { label: "THESIS", num: "chapter 03", title: "Formula 1 lap-time prediction with LSTM & GRU", desc: "Turned into Next Lap, a live dashboard at nextlap.live.", tags: ["python", "next.js", "lstm/gru"] },
-  { label: "RESEARCH", num: "chapter 02", title: "ARKA — customer churn prediction", desc: "Stacking ensemble, SHAP explanations and NLP, written up as a paper.", tags: ["lightgbm", "shap", "nlp"] },
-  { label: "BUILD", num: "chapter 01", title: "IoT monitoring system — final project", desc: "Sensors to backend to a live web dashboard, end to end.", tags: ["hardware", "firmware", "web"] },
+export type TimelineItem = {
+  label: string;
+  num: string;
+  title: string;
+  desc: string;
+  tags: string[];
+  is_branch?: boolean;
+};
+
+export const timeline: TimelineItem[] = [
+  { label: "NOW", num: "chapter 04", title: "Student at Management and Science University", desc: "Kuala Lumpur, Malaysia — open to internships and collaborations.", tags: ["web", "ml", "mobile"], is_branch: false },
+  { label: "THESIS", num: "chapter 03", title: "Formula 1 lap-time prediction with LSTM & GRU", desc: "Turned into Next Lap, a live dashboard at nextlap.live.", tags: ["python", "next.js", "lstm/gru"], is_branch: true },
+  { label: "RESEARCH", num: "chapter 02", title: "ARKA — customer churn prediction", desc: "Stacking ensemble, SHAP explanations and NLP, written up as a paper.", tags: ["lightgbm", "shap", "nlp"], is_branch: true },
+  { label: "BUILD", num: "chapter 01", title: "IoT monitoring system — final project", desc: "Sensors to backend to a live web dashboard, end to end.", tags: ["hardware", "firmware", "web"], is_branch: false },
 ];
 
 export const stack = [
@@ -28,7 +37,7 @@ export const stack = [
 
 export const stackMarquee = ["TYPESCRIPT", "NEXT.JS", "REACT", "PYTHON", "SQL", "POSTGRESQL", "SUPABASE", "NODE.JS", "SCIKIT-LEARN", "LIGHTGBM"];
 export const outputsMarquee = ["Web apps", "APIs", "Dashboards", "ML models", "Data pipelines", "Mobile apps", "IoT systems"];
-export const availableMarquee = ["OPEN TO INTERNSHIPS", "OPEN TO COLLABORATIONS", "BASED IN KUALA LUMPUR"];
+export const availableMarquee = ["OPEN TO INTERNSHIPS", "OPEN TO COLLABORATIONS", "OPEN TO REMOTE WORK", "AVAILABLE FOR FREELANCE"];
 
 export const principles = [
   { title: "It runs, or it isn't done.", body: "Every project ends with something deployed and usable — not a prototype that stalls in a folder." },
@@ -42,6 +51,8 @@ export type Project = {
   role: string; type: string; stack: string; fig: string;
   context: string; built: string;
   live?: string; // only set where a live site exists
+  github?: string; // project-specific repository URL
+  is_private?: boolean; // true for private/internal systems with no public links
   shots?: { src: string; alt: string }[]; // up to three app screenshots, fanned in the card (placeholder figure otherwise)
   accent?: string; // background of the screenshot area
 };
@@ -49,11 +60,7 @@ export type Project = {
 export const projects: Project[] = [
   {
     slug: "nextlap", live: "https://nextlap.live", accent: "#F2701C",
-    shots: [
-      { src: "/work/nextlap-overview.webp", alt: "Next Lap race overview: gap to leader, lap time spread and team pace" },
-      { src: "/work/nextlap-circuit.webp", alt: "Next Lap circuit and driver picker with a 3D track" },
-      { src: "/work/nextlap-replay.webp", alt: "Next Lap lap replay dashboard with live track map, telemetry and lap times" },
-    ], title: "Next Lap", label: "WEB · THESIS", fig: "fig.01 — next lap",
+    title: "Next Lap", label: "WEB · THESIS", fig: "fig.01 — next lap",
     tagline: "F1 lap times, predicted and visualised.",
     desc: "Pick a race and driver, see predicted vs actual lap times, and compare how the LSTM and GRU models behave across a stint.",
     role: "full-stack, solo", type: "web app · thesis", stack: "next.js · python · lstm/gru",
@@ -112,7 +119,16 @@ export const process = [
 
 // PLACEHOLDERS: replace with your real certificates (title, issuer, year, credential id, verify link).
 // img: optional picture of the certificate (landscape works best), e.g. "/certs/python.webp" from public/certs. Without it the card draws a blank certificate.
-export type Certificate = { title: string; issuer: string; year: string; id: string; url: string; img?: string };
+export type Certificate = {
+  title: string;
+  issuer: string;
+  year: string;
+  id: string;
+  url: string;
+  img?: string;
+  valid_until?: string | null;
+  is_lifetime?: boolean;
+};
 export const certificates: Certificate[] = [
   { title: "Certificate title", issuer: "Issuing organisation", year: "2026", id: "CREDENTIAL-ID-0001", url: "#" },
   { title: "Certificate title", issuer: "Issuing organisation", year: "2025", id: "CREDENTIAL-ID-0002", url: "#" },

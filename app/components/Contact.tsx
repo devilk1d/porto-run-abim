@@ -50,9 +50,9 @@ export default function Contact({ children }: { children: React.ReactNode }) {
                 <button type="button" className="cj-copy" onClick={copy} aria-label={copied ? "Email copied" : "Copy email address"}>{copied ? "copied ✓" : "copy"}</button>
               </dd>
             </div>
-            <div className="cj-l"><dt>&quot;github&quot;</dt><dd><a className="s" href={GITHUB} target="_blank" rel="noreferrer">&quot;github.com&quot; ↗</a></dd></div>
-            <div className="cj-l"><dt>&quot;linkedin&quot;</dt><dd><a className="s" href={LINKEDIN} target="_blank" rel="noreferrer">&quot;linkedin.com&quot; ↗</a></dd></div>
-            <div className="cj-l"><dt>&quot;based_in&quot;</dt><dd><span className="s">&quot;Kuala Lumpur · UTC+8&quot;</span></dd></div>
+            <div className="cj-l"><dt>&quot;github&quot;</dt><dd><a className="s" href={GITHUB} target="_blank" rel="noreferrer">&quot;{GITHUB}&quot; ↗</a></dd></div>
+            <div className="cj-l"><dt>&quot;linkedin&quot;</dt><dd><a className="s" href={LINKEDIN} target="_blank" rel="noreferrer">&quot;{LINKEDIN}&quot; ↗</a></dd></div>
+            <div className="cj-l"><dt>&quot;based_in&quot;</dt><dd><span className="s">&quot;Malaysia · UTC+8&quot;</span></dd></div>
           </dl>
           <p className="sr-only" role="status" aria-live="polite">{copied ? "Email address copied" : ""}</p>
         </div>

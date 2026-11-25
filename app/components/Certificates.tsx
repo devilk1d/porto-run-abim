@@ -1,3 +1,5 @@
+"use client";
+import { useEffect, useRef } from "react";
 import { certificates, type Certificate } from "../data";
 import { TransitionLink } from "./PageTransition";
 
@@ -16,6 +18,35 @@ function BlankCert() {
 const TILTS = ["-1.6deg", "1.1deg", "-0.8deg", "1.5deg"];
 
 export function CertificateCard({ c, i }: { c: Certificate; i: number }) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const d = dialogRef.current;
+    if (!d) return;
+    const onClose = () => {
+      document.body.style.overflow = "";
+    };
+    d.addEventListener("close", onClose);
+    return () => {
+      d.removeEventListener("close", onClose);
+      document.body.style.overflow = "";
+    };
+  }, []);
+
+  const openModal = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (dialogRef.current) {
+      document.body.style.overflow = "hidden";
+      dialogRef.current.showModal();
+    }
+  };
+
+  const closeModal = () => {
+    if (dialogRef.current) {
+      dialogRef.current.close();
+    }
+  };
+
   const doc = c.img
     ? <img src={c.img} alt={`${c.title}, ${c.issuer}`} width={1200} height={848} loading="lazy" decoding="async" />
     : <BlankCert />;
@@ -23,9 +54,19 @@ export function CertificateCard({ c, i }: { c: Certificate; i: number }) {
     <li className="cert" style={{ "--tilt": TILTS[i % TILTS.length] } as React.CSSProperties}>
       <span className="cert-tape" aria-hidden="true" />
       <div className="cert-media">
-        {c.img
-          ? <a className="cert-doc" href={c.img} target="_blank" rel="noreferrer" aria-label={`Open the ${c.title} certificate image`}>{doc}<span className="cert-zoom mono" aria-hidden="true">VIEW ↗</span></a>
-          : <div className="cert-doc">{doc}</div>}
+        {c.img ? (
+          <button
+            type="button"
+            className="cert-doc"
+            onClick={openModal}
+            aria-label={`Open ${c.title} certificate image preview`}
+          >
+            {doc}
+            <span className="cert-zoom mono" aria-hidden="true">VIEW ↗</span>
+          </button>
+        ) : (
+          <div className="cert-doc">{doc}</div>
+        )}
         <i className="cross tl" /><i className="cross tr" /><i className="cross bl" /><i className="cross br" />
         <span className="cert-kind mono small">CERTIFICATE · {c.year}</span>
         <span className="cert-seal" aria-hidden="true">✓</span>
@@ -35,17 +76,116 @@ export function CertificateCard({ c, i }: { c: Certificate; i: number }) {
         <p className="cert-issuer">{c.issuer}</p>
       </div>
       <div className="cert-stub">
-        <div>
-          <p className="mono small muted">CREDENTIAL ID</p>
-          <p className="mono cert-id">{c.id}</p>
+        <div style={{ display: "flex", gap: "20px", alignItems: "flex-start", flexWrap: "wrap", minWidth: 0, flex: 1 }}>
+          <div style={{ minWidth: "90px" }}>
+            <p className="mono small muted">CREDENTIAL ID</p>
+            <p className="mono cert-id">{c.id}</p>
+          </div>
+          {(c.valid_until || c.is_lifetime) && (
+            <div>
+              <p className="mono small muted">VALID DATE</p>
+              <p className="mono cert-id">{c.is_lifetime ? "LIFETIME" : c.valid_until}</p>
+            </div>
+          )}
         </div>
         <a className="link-u mono" href={c.url} target="_blank" rel="noreferrer">VERIFY ↗</a>
       </div>
+
+      {c.img && (
+        <dialog
+          ref={dialogRef}
+          className="msg cert-preview-dialog"
+          aria-labelledby={`cert-modal-title-${i}`}
+          data-lenis-prevent
+          onClick={(e) => {
+            if (e.target === dialogRef.current) closeModal();
+          }}
+        >
+          <div className="msg-bar mono small">
+            <i /><i /><i />
+            <span>~/certificates/{c.id ? c.id.toLowerCase() : "preview"}.img</span>
+            <button
+              type="button"
+              className="pill mono small"
+              onClick={closeModal}
+              aria-label="Close certificate preview"
+            >
+              close <span className="muted">esc</span>
+            </button>
+          </div>
+
+          <div className="cert-preview-body">
+            <div className="cert-preview-img-box">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={c.img}
+                alt={`${c.title}, ${c.issuer}`}
+                loading="lazy"
+                decoding="async"
+                fetchPriority="low"
+              />
+            </div>
+
+            <div className="cert-preview-meta">
+              <div style={{ flex: 1, minWidth: "240px" }}>
+                <p className="mono small muted" style={{ marginBottom: "4px" }}>
+                  {c.issuer.toUpperCase()} · {c.year}
+                </p>
+                <h3 id={`cert-modal-title-${i}`} style={{ fontSize: "20px", fontWeight: "700", lineHeight: 1.25 }}>
+                  {c.title}
+                </h3>
+                <div style={{ display: "flex", gap: "20px", marginTop: "12px", flexWrap: "wrap" }}>
+                  <div>
+                    <span className="mono small muted" style={{ display: "block" }}>
+                      CREDENTIAL ID
+                    </span>
+                    <span className="mono small bold">{c.id}</span>
+                  </div>
+                  {(c.valid_until || c.is_lifetime) && (
+                    <div>
+                      <span className="mono small muted" style={{ display: "block" }}>
+                        VALIDITY
+                      </span>
+                      <span className="mono small bold">
+                        {c.is_lifetime ? "LIFETIME" : c.valid_until}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+                {c.url && (
+                  <a
+                    href={c.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn dark"
+                    style={{ textDecoration: "none", fontSize: "13px" }}
+                  >
+                    Verify Credential <span aria-hidden="true">↗</span>
+                  </a>
+                )}
+                <button
+                  type="button"
+                  className="btn ghost"
+                  onClick={closeModal}
+                  style={{ fontSize: "13px" }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </dialog>
+      )}
     </li>
   );
 }
 
-export default function Certificates() {
+export default function Certificates({ items = certificates }: { items?: Certificate[] }) {
+  const list = items && items.length > 0 ? items : certificates;
+  const displayList = list.slice(0, 3);
   return (
     <section id="certificates" tabIndex={-1} className="certs wrap">
       <div className="stack-head">
@@ -60,14 +200,14 @@ export default function Certificates() {
       </div>
 
       <ol className="cert-grid">
-        {certificates.map((c, i) => (
-          <CertificateCard key={c.id} c={c} i={i} />
+        {displayList.map((c, i) => (
+          <CertificateCard key={`${c.id}-${i}`} c={c} i={i} />
         ))}
       </ol>
 
       <div className="cert-more">
         <TransitionLink href="/all-certificates" label="all certificates" className="cert-all">
-          <span className="cert-all-n mono">{String(certificates.length).padStart(2, "0")}</span>
+          <span className="cert-all-n mono">{String(list.length).padStart(2, "0")}</span>
           <span className="cert-all-t">View all certificates</span>
           <span className="cert-all-go" aria-hidden="true">→</span>
         </TransitionLink>

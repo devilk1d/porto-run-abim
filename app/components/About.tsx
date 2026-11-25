@@ -13,33 +13,25 @@ function Barcode() {
     </svg>
   );
 }
-const WORDS = about.map((b) => b.p.split(" "));
 // Words that belong to a highlighted phrase (marker pen), matched ignoring trailing punctuation.
 const bare = (w: string) => w.replace(/[,.:]+$/, "");
-const HL = about.map((b, i) => {
-  const flags = WORDS[i].map(() => false);
-  b.hl.forEach((ph) => {
-    const pw = ph.split(" ").map(bare);
-    const at = WORDS[i].findIndex((_, j) => pw.every((w, k) => bare(WORDS[i][j + k] ?? "") === w));
-    if (at >= 0) pw.forEach((_, k) => (flags[at + k] = true));
-  });
-  return flags;
-});
+
+type AboutItem = { k: string; p: string; hl: string[] };
 
 // One chapter: its words light up as the paragraph scrolls from the lower part of the screen to the middle.
-function Chapter({ i }: { i: number }) {
+function Chapter({ item, words, hlFlags }: { item: AboutItem; words: string[]; hlFlags: boolean[] }) {
   const ref = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start 85%", "end 68%"] });
   const [lit, setLit] = useState(0);
-  useMotionValueEvent(scrollYProgress, "change", (v) => setLit(Math.round(Math.min(1, Math.max(0, v)) * WORDS[i].length)));
-  const n = reduce ? WORDS[i].length : lit;
+  useMotionValueEvent(scrollYProgress, "change", (v) => setLit(Math.round(Math.min(1, Math.max(0, v)) * words.length)));
+  const n = reduce ? words.length : lit;
   return (
     <div className="chap-item">
-      <p className={`mono small chap-k${n > 0 ? " on" : ""}`} aria-hidden="true">## {about[i].k}</p>
+      <p className={`mono small chap-k${n > 0 ? " on" : ""}`} aria-hidden="true">## {item.k}</p>
       <div ref={ref} className="about-p">
-        <span className="sr-only">{about[i].p}</span>
-        <span aria-hidden="true">{WORDS[i].map((w, j) => <span key={j} className={`w${j < n ? " on" : ""}${HL[i][j] ? " hl" : ""}`}>{w} </span>)}</span>
+        <span className="sr-only">{item.p}</span>
+        <span aria-hidden="true">{words.map((w, j) => <span key={j} className={`w${j < n ? " on" : ""}${hlFlags[j] ? " hl" : ""}`}>{w} </span>)}</span>
       </div>
     </div>
   );
@@ -47,7 +39,15 @@ function Chapter({ i }: { i: number }) {
 
 // Normal page flow: the ID card stays put (sticky) while the four chapters scroll past on the right, each one reading itself in
 // as it crosses the screen. The photo sharpens as the section comes into view.
-export default function About() {
+export default function About({
+  items = about,
+  photoUrl = null,
+  photoAlt = "Abim portrait",
+}: {
+  items?: AboutItem[];
+  photoUrl?: string | null;
+  photoAlt?: string;
+}) {
   const outer = useRef<HTMLElement>(null);
   const body = useRef<HTMLDivElement>(null);
   const [amount, setAmount] = useState(0);
@@ -55,27 +55,39 @@ export default function About() {
   useMotionValueEvent(arrive, "change", (v) => setAmount(Math.round(Math.min(1, Math.max(0, v)) * 20) / 20));
   const { scrollYProgress: read } = useScroll({ target: body, offset: ["start 60%", "end 60%"] });
 
+  const list = items && items.length > 0 ? items : about;
+  const wordsList = list.map((b) => b.p.split(" "));
+  const hlList = list.map((b, i) => {
+    const flags = wordsList[i].map(() => false);
+    b.hl.forEach((ph) => {
+      const pw = ph.split(" ").map(bare);
+      const at = wordsList[i].findIndex((_, j) => pw.every((w, k) => bare(wordsList[i][j + k] ?? "") === w));
+      if (at >= 0) pw.forEach((_, k) => (flags[at + k] = true));
+    });
+    return flags;
+  });
+
   return (
     <section ref={outer} id="about" tabIndex={-1} className="about-pin">
       <div className="about wrap">
         <figure className="idcard">
           <span className="idcard-strap" aria-hidden="true" />
           <span className="idcard-hole" aria-hidden="true" />
-          <figcaption className="idcard-head mono small"><span>abim.run · developer</span><span>KUALA LUMPUR</span></figcaption>
+          <figcaption className="idcard-head mono small"><span>abim.run · developer</span><span>MY / ID</span></figcaption>
           <div className="idcard-photo">
-            <PixelPhoto amount={amount} alt="Abim with friends at a night event, holding a laptop" />
+            <PixelPhoto src={photoUrl} amount={amount} alt={photoAlt} />
             <i className="cross tl" /><i className="cross tr" /><i className="cross bl" /><i className="cross br" />
           </div>
           <p className="idcard-name">Abim</p>
           <p className="idcard-role mono">full-stack developer</p>
-          <div className="idcard-chips"><span className="chip accent">MSU · KL</span><span className="chip dark">next.js + python</span></div>
+          <div className="idcard-chips"><span className="chip accent">MSU · PNJ</span><span className="chip dark">next.js + python</span></div>
           <div className="idcard-bar mono small" aria-hidden="true"><Barcode /><span>UTC+8 · the human behind the commits</span></div>
         </figure>
 
         <div ref={body} className="about-body chap">
           <div className="row mono small"><span>[02] about</span><span>02 / 08</span></div>
           <span className="chap-rail" aria-hidden="true"><motion.i style={{ scaleY: read }} /></span>
-          {about.map((b, i) => <Chapter key={b.k} i={i} />)}
+          {list.map((b, i) => <Chapter key={b.k} item={b} words={wordsList[i]} hlFlags={hlList[i]} />)}
         </div>
       </div>
     </section>

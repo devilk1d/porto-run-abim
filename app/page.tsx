@@ -16,10 +16,19 @@ import { ContactTrigger } from "./components/ContactDialog";
 import { PixelArrow } from "./components/Logo";
 import { Magnetic, ScrollLink } from "./components/Extras";
 import { stackMarquee, outputsMarquee } from "./data";
+import { getProjects, getCertificates, getExperiences, getAboutChapters, getAboutProfile } from "../utils/supabase/queries";
 
 const nav: [string, string][] = [["About", "#about"], ["Experience", "#experience"], ["Stack", "#stack"], ["Projects", "#projects"], ["Certificates", "#certificates"]];
 
-export default function Home() {
+export default async function Home() {
+  const [projectsData, certificatesData, experiencesData, aboutChaptersData, aboutProfile] = await Promise.all([
+    getProjects(),
+    getCertificates(),
+    getExperiences(),
+    getAboutChapters(),
+    getAboutProfile(),
+  ]);
+
   return (
     <>
       <Boot />
@@ -46,7 +55,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="hero-aside intro" style={{ "--i": 4 } as React.CSSProperties}>
-                <p className="hero-sub">Web apps, mobile apps and ML-backed tools — from the database to the interface. Based in Kuala Lumpur, studying at MSU.</p>
+                <p className="hero-sub">Web apps, mobile apps and ML-backed tools — from the database to the interface.</p>
                 <StackPile />
               </div>
             </div>
@@ -56,9 +65,13 @@ export default function Home() {
         </section>
 
         <Statement />
-        <About />
+        <About
+          items={aboutChaptersData}
+          photoUrl={aboutProfile.photoUrl}
+          photoAlt={aboutProfile.photoAlt}
+        />
 
-        <Experience />
+        <Experience items={experiencesData} />
 
         {/* S4 Stack */}
         <StackSection>
@@ -69,8 +82,8 @@ export default function Home() {
         </StackSection>
 
         {/* Hidden, not deleted: "Why work with me" lives in components/Principles.tsx. To bring it back, import it and render <Principles /> here. */}
-        <Projects />
-        <Certificates />
+        <Projects items={projectsData} />
+        <Certificates items={certificatesData} />
 
         {/* S7 Process */}
         <Process />
@@ -78,7 +91,7 @@ export default function Home() {
         <ContactBlock />
       </main>
 
-      <SiteFooter home />
+      <SiteFooter home projects={projectsData} />
     </>
   );
 }

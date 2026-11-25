@@ -8,7 +8,6 @@ import Shots from "./Shots";
 import { usePinned, scrollToProgress, usePinProgress } from "./scroll";
 import { TransitionLink } from "./PageTransition";
 
-const N = projects.length;
 const pad = (n: number) => String(n).padStart(2, "0");
 
 // Stack pose for a card whose distance from the front is `rel` (0 = front, 1.. = behind, < 0 = leaving).
@@ -37,11 +36,23 @@ function CardBody({ pr, i }: { pr: Project; i: number }) {
           <ul className="chips">{pr.stack.split(" · ").map((t) => <li key={t} className="mono">{t}</li>)}</ul>
         </div>
         <div className="pk-act">
-          {pr.live && <a className="btn dark" href={pr.live} target="_blank" rel="noreferrer">View live <span aria-hidden="true">↗</span></a>}
-          <a className="btn ghost gh" href={GITHUB} target="_blank" rel="noreferrer" aria-label={`View ${pr.title} codebase on GitHub`}>
-            <GitHubMark size={22} />
-            <span>View codebase</span>
-          </a>
+          {pr.is_private ? (
+            <span className="pk-private mono small" aria-label="Private or internal project">
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+                <rect x="3" y="7" width="10" height="7" />
+                <path d="M5 7V5a3 3 0 0 1 6 0v2" />
+              </svg>
+              <span>PRIVATE · INTERNAL</span>
+            </span>
+          ) : (
+            <>
+              {pr.live && <a className="btn dark" href={pr.live} target="_blank" rel="noreferrer">View live <span aria-hidden="true">↗</span></a>}
+              <a className="btn ghost gh" href={pr.github || GITHUB} target="_blank" rel="noreferrer" aria-label={`View ${pr.title} codebase on GitHub`}>
+                <GitHubMark size={22} />
+                <span>View codebase</span>
+              </a>
+            </>
+          )}
         </div>
       </div>
     </>
@@ -49,11 +60,11 @@ function CardBody({ pr, i }: { pr: Project; i: number }) {
 }
 
 // One card of the stack. In pinned mode its pose follows the scroll position `s`; otherwise it is a plain slide.
-function StackCard({ i, s, pinned, front, children, label }: { i: number; s: MotionValue<number>; pinned: boolean; front: boolean; children: React.ReactNode; label: string }) {
+function StackCard({ i, s, pinned, front, children, label, total }: { i: number; s: MotionValue<number>; pinned: boolean; front: boolean; children: React.ReactNode; label: string; total: number }) {
   const transform = useTransform(s, (v) => pose(i - v));
   const visibility = useTransform(s, (v) => (i - v <= -1 ? "hidden" : "visible"));
   return (
-    <motion.article className="pk-card" style={pinned ? { transform, visibility, zIndex: N + 1 - i } : undefined}
+    <motion.article className="pk-card" style={pinned ? { transform, visibility, zIndex: total + 1 - i } : undefined}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       {...(pinned && !front ? ({ inert: true } as any) : {})}
       role="group" aria-roledescription="slide" aria-label={label}>
@@ -85,7 +96,10 @@ function WorkBackdrop({ p }: { p: MotionValue<number> }) {
   );
 }
 
-export default function Projects() {
+export default function Projects({ items = projects }: { items?: Project[] }) {
+  const allItems = items && items.length > 0 ? items : projects;
+  const list = allItems.slice(0, 5);
+  const N = list.length;
   const outer = useRef<HTMLElement>(null);
   const deck = useRef<HTMLDivElement>(null);
   const prevBtn = useRef<HTMLButtonElement>(null);
@@ -131,7 +145,7 @@ export default function Projects() {
       pending.current = null;
       const i = nearest();
       setCurrent(i);
-      if (i !== settled) { settled = i; setStatus(`Project ${i + 1} of ${N}: ${projects[i].title}`); }
+      if (i !== settled) { settled = i; setStatus(`Project ${i + 1} of ${N}: ${list[i]?.title ?? ""}`); }
     };
     const onScroll = () => {
       if (pending.current === null) frame ||= requestAnimationFrame(() => { frame = 0; setCurrent(nearest()); });
@@ -151,7 +165,7 @@ export default function Projects() {
       releaseTimer.current = window.setTimeout(() => { pending.current = null; }, 2500); // safety: free if the user scrolls away mid-jump
       if (Math.abs(s.get() - target) < 0.08) pending.current = null; // already there: nothing to wait for
       scrollToProgress(outer.current!, target / N, instant);
-      setStatus(`Project ${target + 1} of ${N}: ${projects[target].title}`);
+      setStatus(`Project ${target + 1} of ${N}: ${list[target]?.title ?? ""}`);
       return;
     }
     const t = deck.current!;
@@ -214,14 +228,14 @@ export default function Projects() {
             </div>
 
             <div ref={deck} className="pk-deck" tabIndex={pinned ? undefined : 0} role="group" aria-label="Projects">
-              {projects.map((pr, i) => (
-                <StackCard key={pr.slug} i={i} s={s} pinned={pinned} front={i === front} label={`${i + 1} of ${N}`}>
+              {list.map((pr, i) => (
+                <StackCard key={pr.slug} i={i} s={s} pinned={pinned} front={i === front} label={`${i + 1} of ${N}`} total={N}>
                   <CardBody pr={pr} i={i} />
                 </StackCard>
               ))}
-              <StackCard i={N} s={s} pinned={pinned} front={front === N} label="All projects">
+              <StackCard i={N} s={s} pinned={pinned} front={front === N} label="All projects" total={N}>
                 <TransitionLink href="/all-projects" label="all projects" className="pk-cta">
-                  <span className="mono small">[{pad(N)}] projects, one page</span>
+                  <span className="mono small">[{pad(allItems.length)}] projects, one page</span>
                   <span className="pk-cta-t">View all<br />projects</span>
                   <span className="btn accent">Open the full list <span aria-hidden="true">→</span></span>
                 </TransitionLink>

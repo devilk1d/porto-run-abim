@@ -74,6 +74,21 @@ function Site() {
   );
 }
 
+function DefaultFig() {
+  return (
+    <svg viewBox="0 0 320 140" className="fig-svg" style={{ width: "100%", height: "100%" }}>
+      <rect x="12" y="12" width="296" height="116" fill="none" stroke="currentColor" strokeOpacity="0.22" strokeDasharray="4 4" />
+      <rect x="28" y="28" width="128" height="44" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <rect x="172" y="28" width="120" height="44" fill="var(--accent)" fillOpacity="0.85" stroke="currentColor" strokeWidth="1.5" />
+      <line x1="28" y1="90" x2="292" y2="90" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.5" />
+      <line x1="28" y1="104" x2="210" y2="104" stroke="currentColor" strokeOpacity="0.2" strokeWidth="1.5" />
+      <circle cx="40" cy="50" r="6" fill="var(--accent)" />
+      <line x1="56" y1="46" x2="136" y2="46" stroke="currentColor" strokeOpacity="0.5" strokeWidth="2" />
+      <line x1="56" y1="56" x2="112" y2="56" stroke="currentColor" strokeOpacity="0.3" strokeWidth="2" />
+    </svg>
+  );
+}
+
 const FIGS: Record<string, { el: React.ReactNode; foot: React.ReactNode }> = {
   nextlap: { el: <NextLap />, foot: <><span>lap 1</span><span>lap 40</span></> },
   arka: { el: <Arka />, foot: <span>mean |SHAP value| → churn</span> },
@@ -84,7 +99,7 @@ const FIGS: Record<string, { el: React.ReactNode; foot: React.ReactNode }> = {
 };
 
 export default function Figure({ slug, label }: { slug: string; label: string }) {
-  const f = FIGS[slug];
+  const f = FIGS[slug] ?? { el: <DefaultFig />, foot: <span>system · preview</span> };
   return (
     <div className="fig" aria-hidden="true">
       <div className="row mono small">

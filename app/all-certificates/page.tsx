@@ -3,7 +3,7 @@ import Navbar from "../components/Navbar";
 import { CertificateCard } from "../components/Certificates";
 import BackHome from "../components/BackHome";
 import { ContactBlock, SiteFooter } from "../components/SiteEnd";
-import { certificates } from "../data";
+import { getCertificates } from "../../utils/supabase/queries";
 
 export const metadata: Metadata = {
   title: "All certificates — abim.run",
@@ -11,12 +11,6 @@ export const metadata: Metadata = {
 };
 
 const pad = (n: number) => String(n).padStart(2, "0");
-
-// Group by year, newest first, keeping the original order inside a year.
-const years = [...new Set(certificates.map((c) => c.year))].sort((a, b) => Number(b) - Number(a));
-const groups = years.map((y) => ({ year: y, items: certificates.filter((c) => c.year === y) }));
-const issuers = new Set(certificates.map((c) => c.issuer)).size;
-const span = years.length > 1 ? `${years[years.length - 1]}–${years[0]}` : years[0];
 
 function Seal() {
   return (
@@ -31,7 +25,13 @@ function Seal() {
   );
 }
 
-export default function AllCertificates() {
+export default async function AllCertificates() {
+  const certsList = await getCertificates();
+  const years = [...new Set(certsList.map((c) => c.year))].sort((a, b) => Number(b) - Number(a));
+  const groups = years.map((y) => ({ year: y, items: certsList.filter((c) => c.year === y) }));
+  const issuers = new Set(certsList.map((c) => c.issuer)).size;
+  const span = years.length > 1 ? `${years[years.length - 1]}–${years[0]}` : (years[0] ?? "");
+
   return (
     <>
     <div className="cp">
@@ -49,7 +49,7 @@ export default function AllCertificates() {
         </header>
 
         <dl className="cp-stats">
-          <div><dt className="mono small muted">CERTIFICATES</dt><dd className="cond">{pad(certificates.length)}</dd></div>
+          <div><dt className="mono small muted">CERTIFICATES</dt><dd className="cond">{pad(certsList.length)}</dd></div>
           <div><dt className="mono small muted">ISSUERS</dt><dd className="cond">{pad(issuers)}</dd></div>
           <div><dt className="mono small muted">YEARS</dt><dd className="cond">{span}</dd></div>
         </dl>
@@ -62,7 +62,7 @@ export default function AllCertificates() {
                 <span className="mono small muted">{pad(g.items.length)} {g.items.length === 1 ? "certificate" : "certificates"}</span>
               </div>
               <ol className="cp-cards">
-                {g.items.map((c, i) => <CertificateCard key={c.id} c={c} i={i} />)}
+                {g.items.map((c, i) => <CertificateCard key={`${c.id}-${i}`} c={c} i={i} />)}
               </ol>
             </section>
           ))}

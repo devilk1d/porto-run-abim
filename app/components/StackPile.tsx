@@ -37,7 +37,7 @@ export default function StackPile() {
             dragMomentum={false} whileHover={{ scale: 1.06 }} whileDrag={{ scale: 1.14 }}
             onPointerDown={() => raise(i)}
             style={{ left: `${t.x}rem`, top: `${t.y}rem`, width: `${t.s}rem`, height: `${t.s}rem`, zIndex: 20 + z[i] }}>
-            <div className="pile-s" style={{ rotate: `${t.r}deg`, "--k": i } as React.CSSProperties}><img src={`/stack/${FILES[t.id]}.svg`} alt="" draggable={false} /></div>
+            <div className="pile-s" style={{ rotate: `${t.r}deg`, "--k": i } as React.CSSProperties}><img src={`/stack/${FILES[t.id]}.svg`} alt="" width={64} height={64} decoding="async" draggable={false} /></div>
           </motion.div>
         ))}
       </div>

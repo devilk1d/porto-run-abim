@@ -73,14 +73,14 @@ export default function About({
         <figure className="idcard">
           <span className="idcard-strap" aria-hidden="true" />
           <span className="idcard-hole" aria-hidden="true" />
-          <figcaption className="idcard-head mono small"><span>abim.run · developer</span><span>KUALA LUMPUR</span></figcaption>
+          <figcaption className="idcard-head mono small"><span>abim.run · developer</span><span>MY / ID</span></figcaption>
           <div className="idcard-photo">
             <PixelPhoto src={photoUrl} amount={amount} alt={photoAlt} />
             <i className="cross tl" /><i className="cross tr" /><i className="cross bl" /><i className="cross br" />
           </div>
           <p className="idcard-name">Abim</p>
           <p className="idcard-role mono">full-stack developer</p>
-          <div className="idcard-chips"><span className="chip accent">MSU · KL</span><span className="chip dark">next.js + python</span></div>
+          <div className="idcard-chips"><span className="chip accent">MSU · PNJ</span><span className="chip dark">next.js + python</span></div>
           <div className="idcard-bar mono small" aria-hidden="true"><Barcode /><span>UTC+8 · the human behind the commits</span></div>
         </figure>
 

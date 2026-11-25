@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "../../../utils/supabase/client";
@@ -13,6 +13,15 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("reason") === "timeout") {
+        setErrorMsg("Session expired due to 15 minutes of inactivity. Please sign in again.");
+      }
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +38,12 @@ export default function AdminLoginPage() {
       if (error) {
         setErrorMsg(error.message);
         return;
+      }
+
+      try {
+        localStorage.setItem("admin_last_activity", String(Date.now()));
+      } catch {
+        // ignore storage errors
       }
 
       router.push("/admin");

@@ -29,9 +29,11 @@ export async function getProjects(): Promise<Project[]> {
     const { data, error } = await supabase
       .from("projects")
       .select("*, project_shots(*)")
+      .eq("status", "published")
+      .eq("is_hidden", false)
       .order("order_index", { ascending: true });
 
-    if (error || !data || data.length === 0) return defaultProjects;
+    if (error || !data) return defaultProjects;
 
     return data.map((p) => ({
       slug: p.slug,
@@ -63,15 +65,32 @@ export async function getProjects(): Promise<Project[]> {
   }
 }
 
+export async function getProjectTypes(): Promise<string[]> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("project_types")
+      .select("name")
+      .order("name", { ascending: true });
+
+    if (error || !data) return [];
+    return data.map((t) => t.name.trim().toLowerCase()).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
 export async function getCertificates(): Promise<Certificate[]> {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("certificates")
       .select("*")
+      .eq("status", "published")
+      .eq("is_hidden", false)
       .order("order_index", { ascending: true });
 
-    if (error || !data || data.length === 0) return defaultCertificates;
+    if (error || !data) return defaultCertificates;
 
     return data.map((c) => ({
       title: c.title,
@@ -94,9 +113,11 @@ export async function getExperiences(): Promise<TimelineItem[]> {
     const { data, error } = await supabase
       .from("experiences")
       .select("*")
+      .eq("status", "published")
+      .eq("is_hidden", false)
       .order("order_index", { ascending: true });
 
-    if (error || !data || data.length === 0) return defaultTimeline;
+    if (error || !data) return defaultTimeline;
 
     return data.map((e) => ({
       label: e.label,

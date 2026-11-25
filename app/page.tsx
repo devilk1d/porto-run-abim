@@ -55,7 +55,7 @@ export default async function Home() {
                 </div>
               </div>
               <div className="hero-aside intro" style={{ "--i": 4 } as React.CSSProperties}>
-                <p className="hero-sub">Web apps, mobile apps and ML-backed tools — from the database to the interface. Based in Kuala Lumpur, studying at MSU.</p>
+                <p className="hero-sub">Web apps, mobile apps and ML-backed tools — from the database to the interface.</p>
                 <StackPile />
               </div>
             </div>
@@ -91,7 +91,7 @@ export default async function Home() {
         <ContactBlock />
       </main>
 
-      <SiteFooter home />
+      <SiteFooter home projects={projectsData} />
     </>
   );
 }

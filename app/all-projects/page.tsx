@@ -3,7 +3,7 @@ import ProjectIndex from "../components/ProjectIndex";
 import Navbar from "../components/Navbar";
 import BackHome from "../components/BackHome";
 import { ContactBlock, SiteFooter } from "../components/SiteEnd";
-import { getProjects } from "../../utils/supabase/queries";
+import { getProjects, getProjectTypes } from "../../utils/supabase/queries";
 
 export const metadata: Metadata = {
   title: "All projects — abim.run",
@@ -13,7 +13,10 @@ export const metadata: Metadata = {
 const pad = (n: number) => String(n).padStart(2, "0");
 
 export default async function AllProjects() {
-  const projectsList = await getProjects();
+  const [projectsList, projectTypes] = await Promise.all([
+    getProjects(),
+    getProjectTypes(),
+  ]);
 
   return (
     <>
@@ -29,11 +32,11 @@ export default async function AllProjects() {
           <p className="sub">Everything I&apos;ve built so far — web apps, ML research and hardware, from thesis to side project. {pad(projectsList.length)} in total.</p>
         </div>
 
-        <ProjectIndex items={projectsList} />
+        <ProjectIndex items={projectsList} availableTypes={projectTypes} />
       </main>
 
       <ContactBlock />
-      <SiteFooter />
+      <SiteFooter projects={projectsList} />
     </>
   );
 }

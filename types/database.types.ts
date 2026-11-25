@@ -73,9 +73,11 @@ export type Database = {
           id: string
           image_url: string | null
           is_featured: boolean
+          is_hidden: boolean
           is_lifetime: boolean
           issuer: string
           order_index: number
+          status: string
           title: string
           updated_at: string
           valid_until: string | null
@@ -88,9 +90,11 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_featured?: boolean
+          is_hidden?: boolean
           is_lifetime?: boolean
           issuer: string
           order_index?: number
+          status?: string
           title: string
           updated_at?: string
           valid_until?: string | null
@@ -103,9 +107,11 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_featured?: boolean
+          is_hidden?: boolean
           is_lifetime?: boolean
           issuer?: string
           order_index?: number
+          status?: string
           title?: string
           updated_at?: string
           valid_until?: string | null
@@ -150,8 +156,10 @@ export type Database = {
           description: string
           id: string
           is_branch: boolean
+          is_hidden: boolean
           label: string
           order_index: number
+          status: string
           tags: string[]
           title: string
           updated_at: string
@@ -162,8 +170,10 @@ export type Database = {
           description: string
           id?: string
           is_branch?: boolean
+          is_hidden?: boolean
           label: string
           order_index?: number
+          status?: string
           tags?: string[]
           title: string
           updated_at?: string
@@ -174,8 +184,10 @@ export type Database = {
           description?: string
           id?: string
           is_branch?: boolean
+          is_hidden?: boolean
           label?: string
           order_index?: number
+          status?: string
           tags?: string[]
           title?: string
           updated_at?: string
@@ -217,6 +229,24 @@ export type Database = {
           },
         ]
       }
+      project_types: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       projects: {
         Row: {
           accent_color: string | null
@@ -229,6 +259,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_featured: boolean
+          is_hidden: boolean
           is_private: boolean
           label: string
           live_url: string | null
@@ -236,6 +267,7 @@ export type Database = {
           role: string
           slug: string
           stack: string
+          status: string
           tagline: string
           title: string
           type: string
@@ -252,6 +284,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_featured?: boolean
+          is_hidden?: boolean
           is_private?: boolean
           label: string
           live_url?: string | null
@@ -259,6 +292,7 @@ export type Database = {
           role: string
           slug: string
           stack: string
+          status?: string
           tagline: string
           title: string
           type: string
@@ -275,6 +309,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_featured?: boolean
+          is_hidden?: boolean
           is_private?: boolean
           label?: string
           live_url?: string | null
@@ -282,6 +317,7 @@ export type Database = {
           role?: string
           slug?: string
           stack?: string
+          status?: string
           tagline?: string
           title?: string
           type?: string

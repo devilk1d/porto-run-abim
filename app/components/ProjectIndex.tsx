@@ -7,12 +7,12 @@ import Shots from "./Shots";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
-const FILTERS: { id: string; label: string; test: (p: Project) => boolean }[] = [
-  { id: "all", label: "all", test: () => true },
-  { id: "web", label: "web", test: (p) => /web/.test(p.type) },
-  { id: "data", label: "data · ml", test: (p) => /data|ml|research/.test(p.type) },
-  { id: "hw", label: "hardware", test: (p) => /hardware/.test(p.type) },
-];
+function parseProjectTypes(raw: string): string[] {
+  return raw
+    .split(/[·,/]/)
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+}
 
 // The project's card: screenshots (or the illustrative figure), the short text, links, and the longer write-up folded away.
 function Preview({ p, index }: { p: Project; index: number }) {
@@ -59,19 +59,51 @@ function Preview({ p, index }: { p: Project; index: number }) {
 
 // Filterable index. Wide screens: rows on the left, the active project previewed in a sticky card on the right.
 // Narrow screens: the active row opens its card right under itself.
-export default function ProjectIndex({ items = projects }: { items?: Project[] }) {
+export default function ProjectIndex({
+  items = projects,
+  availableTypes = [],
+}: {
+  items?: Project[];
+  availableTypes?: string[];
+}) {
   const list = items && items.length > 0 ? items : projects;
+  const usedCounts = new Map<string, number>();
+  for (const p of list) {
+    const uniqueTypes = new Set(parseProjectTypes(p.type));
+    for (const t of uniqueTypes) {
+      usedCounts.set(t, (usedCounts.get(t) ?? 0) + 1);
+    }
+  }
+
+  const orderedTypeNames = Array.from(
+    new Set([
+      ...availableTypes.map((t) => t.trim().toLowerCase()).filter(Boolean),
+      ...usedCounts.keys(),
+    ])
+  ).filter((name) => (usedCounts.get(name) ?? 0) > 0);
+
+  const filters: { id: string; label: string; count: number; test: (p: Project) => boolean }[] = [
+    { id: "all", label: "all", count: list.length, test: () => true },
+    ...orderedTypeNames.map((name) => ({
+      id: name,
+      label: name,
+      count: usedCounts.get(name) ?? 0,
+      test: (p: Project) => parseProjectTypes(p.type).includes(name),
+    })),
+  ];
+
   const [filter, setFilter] = useState("all");
   const [sel, setSel] = useState(list[0]?.slug ?? "");
-  const visible = list.filter(FILTERS.find((f) => f.id === filter)!.test);
+  const activeFilter = filters.find((f) => f.id === filter) ?? filters[0];
+  const visible = list.filter(activeFilter.test);
   const active = visible.find((p) => p.slug === sel) ?? visible[0] ?? list[0];
 
   return (
     <>
       <div className="ap-filters mono" role="group" aria-label="Filter projects">
-        {FILTERS.map((f) => (
-          <button key={f.id} type="button" aria-pressed={f.id === filter} onClick={() => setFilter(f.id)}>
-            {f.label} {pad(list.filter(f.test).length)}
+        {filters.map((f) => (
+          <button key={f.id} type="button" aria-pressed={f.id === activeFilter.id} onClick={() => setFilter(f.id)}>
+            {f.label} {pad(f.count)}
           </button>
         ))}
       </div>

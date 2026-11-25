@@ -86,18 +86,24 @@ img, svg { display: block; max-width: 100%; }
 .block-section { background: var(--block); color: var(--block-ink); --muted: var(--block-muted); --line: var(--block-line); }
 
 /* buttons, chips, links */
-.btn { display: inline-flex; align-items: center; gap: 10px; height: 48px; padding: 0 24px; border-radius: 6px; font-weight: 600; font-size: 15px; transition: background-color .2s, color .2s; }
+.btn { display: inline-flex; align-items: center; gap: 10px; height: 48px; padding: 0 24px; border-radius: 6px; font-weight: 600; font-size: 15px; transition: background-color .35s cubic-bezier(.22, 1, .36, 1), color .35s cubic-bezier(.22, 1, .36, 1), border-color .35s cubic-bezier(.22, 1, .36, 1), translate .45s cubic-bezier(.22, 1, .36, 1), box-shadow .45s cubic-bezier(.22, 1, .36, 1); }
+.btn:active { translate: 0 0 !important; box-shadow: none !important; }
 .btn.dark { background: var(--block); color: var(--block-ink); }
-.btn.dark:hover { background: var(--block2); }
+.btn.dark span { display: inline-block; transition: translate .45s cubic-bezier(.22, 1, .36, 1); }
+.btn.dark:is(:hover, :focus-visible) { background: var(--block2); translate: 0 -2px; box-shadow: 4px 4px 0 var(--accent); }
+.btn.dark:is(:hover, :focus-visible) span { translate: 3px -3px; }
 .btn.accent { background: var(--accent); color: var(--accent-ink); height: 60px; padding: 0 28px; font-size: 17px; }
 
 
 .btn.ghost { border: 1px solid var(--line); background: var(--card); color: var(--ink); }
-/* GitHub logo button: icon only, grows to "View codebase" on hover / focus */
-.btn.gh { gap: 0; padding: 0 14px; overflow: hidden; }
-.btn.gh span { max-inline-size: 0; overflow: hidden; white-space: nowrap; transition: max-inline-size .3s cubic-bezier(.2, .8, .2, 1), margin-inline-start .3s; }
-.btn.gh:is(:hover, :focus-visible) span { max-inline-size: 9rem; margin-inline-start: 10px; }
-@media (hover: none) { .btn.gh { gap: 10px; } .btn.gh span { max-inline-size: none; } }
+/* GitHub logo button: icon only, grows smoothly to "View codebase" on hover / focus */
+.btn.gh { gap: 0; padding: 0 14px; overflow: hidden; transition: background-color .4s cubic-bezier(.22, 1, .36, 1), border-color .4s cubic-bezier(.22, 1, .36, 1), padding .55s cubic-bezier(.22, 1, .36, 1), translate .45s cubic-bezier(.22, 1, .36, 1), box-shadow .45s cubic-bezier(.22, 1, .36, 1); }
+.btn.gh svg { flex-shrink: 0; transition: scale .45s cubic-bezier(.22, 1, .36, 1); }
+.btn.gh span { max-inline-size: 0; opacity: 0; overflow: hidden; white-space: nowrap; transition: max-inline-size .6s cubic-bezier(.22, 1, .36, 1), margin-inline-start .6s cubic-bezier(.22, 1, .36, 1), opacity .45s ease; }
+.btn.gh:is(:hover, :focus-visible) { border-color: var(--ink); padding: 0 18px; translate: 0 -2px; box-shadow: 4px 4px 0 var(--line); }
+.btn.gh:is(:hover, :focus-visible) svg { scale: 1.06; }
+.btn.gh:is(:hover, :focus-visible) span { max-inline-size: 7.5rem; margin-inline-start: 10px; opacity: 1; }
+@media (hover: none) { .btn.gh { gap: 10px; } .btn.gh span { max-inline-size: none; opacity: 1; } }
 .small-btn { height: 40px; border-radius: 20px; }
 .btn.nav-hire-btn {
   background: light-dark(#FFFFFF, var(--block));
@@ -130,17 +136,32 @@ img, svg { display: block; max-width: 100%; }
   .boot { display: block; position: fixed; inset: 0; z-index: 90; pointer-events: none; animation: boot-gone 0s linear 3s forwards; }
   .boot-cells { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(16, 1fr); grid-template-rows: repeat(9, 1fr); }
   .boot-cells i { margin: -.5px; background: var(--block); animation: boot-cell .45s cubic-bezier(.7, 0, .2, 1) forwards; animation-delay: calc(1.6s + var(--d) * 30ms); }
-  .boot-core { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 20px; color: var(--block-muted); animation: boot-core-out .3s ease 1.5s forwards; }
-  .boot-name { width: min(290px, 70vw); }
-  .boot-name rect:not(.hit) { transform-box: fill-box; transform-origin: center; animation: pop .4s cubic-bezier(.3, 1.6, .5, 1) backwards; animation-delay: calc(.1s + var(--d) * 30ms); }
+  .boot-grid { position: absolute; inset: 0; background: radial-gradient(circle, rgb(232 234 230 / .1) 1px, transparent 1.2px) 0 0 / 26px 26px; animation: boot-core-out .3s ease 1.48s forwards; }
+  .boot-hud { position: absolute; font-size: 11px; letter-spacing: .08em; color: var(--block-muted); animation: boot-core-out .28s ease 1.48s forwards; }
+  .boot-tl { left: 1.5rem; top: 1.25rem; }
+  .boot-tr { right: 1.5rem; top: 1.25rem; }
+  .boot-bl { left: 1.5rem; bottom: 1.25rem; }
+  .boot-br { right: 1.5rem; bottom: 1.25rem; }
+  .boot-core { position: absolute; inset: 0; display: grid; place-content: center; padding: 20px; color: var(--block-muted); animation: boot-core-out .32s ease 1.5s forwards; }
+  .boot-panel { inline-size: min(430px, 88vw); border: 1px solid var(--block-line); background: color-mix(in srgb, var(--block2) 92%, #000); box-shadow: 10px 10px 0 var(--accent); overflow: hidden; animation: boot-panel-in .45s cubic-bezier(.2, .8, .2, 1) backwards; }
+  .boot-panel-bar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--block-line); font-size: 11px; color: var(--block-muted); }
+  .boot-dots { display: inline-flex; gap: 6px; }
+  .boot-dots i { width: 8px; height: 8px; background: var(--block-line); }
+  .boot-dots i:first-child { background: var(--accent); }
+  .boot-status { margin-left: auto; padding: 2px 7px; font-size: 10px; letter-spacing: .08em; border: 1px solid var(--block-line); color: var(--block-ink); transition: background-color .2s, color .2s, border-color .2s; }
+  .boot-status.ready { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .boot-panel-body { display: grid; justify-items: center; gap: 18px; padding: 28px 24px 24px; }
+  .boot-name { width: min(290px, 68vw); }
+  .boot-name rect:not(.hit) { transform-box: fill-box; transform-origin: center; animation: pop .4s cubic-bezier(.3, 1.6, .5, 1) backwards; animation-delay: calc(.08s + var(--d) * 28ms); }
   .boot .pixel-dot { animation: blink .5s steps(1) infinite; }
-  .boot-meta { display: flex; justify-content: space-between; inline-size: min(320px, 70vw); letter-spacing: .04em; }
-  .boot-meta b { color: var(--accent); font-weight: 500; font-variant-numeric: tabular-nums; }
-  .boot-bar { inline-size: min(320px, 70vw); block-size: 2px; background: var(--block-line); }
-  .boot-bar i { display: block; block-size: 100%; background: var(--accent); animation: boot-fill 1.4s steps(14) forwards; scale: 0 1; transform-origin: left; }
-  .boot-log { margin-top: -6px; font-size: 11px; }
-  .boot-corner { position: absolute; right: 1.5rem; bottom: 1.25rem; color: var(--block-muted); animation: boot-core-out .3s ease 1.5s forwards; }
-  @keyframes boot-fill { to { scale: 1 1; } }
+  .boot-meta { display: flex; justify-content: space-between; inline-size: 100%; letter-spacing: .04em; font-size: 12px; }
+  .boot-meta b { color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .boot-segs { display: grid; grid-template-columns: repeat(20, 1fr); gap: 4px; inline-size: 100%; height: 10px; }
+  .boot-segs i { background: var(--block-line); transition: background-color .12s ease, transform .15s ease; }
+  .boot-segs i.on { background: var(--accent); }
+  .boot-log { display: flex; align-items: center; justify-content: flex-start; inline-size: 100%; min-height: 1.4em; font-size: 11px; color: var(--block-ink); opacity: .82; }
+  .boot-cursor { display: inline-block; width: 7px; height: 12px; margin-left: 6px; background: var(--accent); animation: blink .65s steps(1) infinite; }
+  @keyframes boot-panel-in { from { opacity: 0; translate: 0 14px; scale: .97; } }
   @keyframes boot-cell { 0% { scale: 1; background: var(--block); } 35% { scale: 1; background: var(--accent); } 100% { scale: 0; background: var(--accent); } }
   @keyframes boot-core-out { to { opacity: 0; scale: .96; translate: 0 -12px; } }
   @keyframes boot-gone { to { visibility: hidden; } }
@@ -587,16 +608,16 @@ img, svg { display: block; max-width: 100%; }
 .sx-layers button { position: relative; display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "n t p" "n c p"; column-gap: 18px; align-items: center; text-align: left; padding: 18px 20px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); transition: translate .3s cubic-bezier(.2, .8, .2, 1), border-color .25s, background-color .25s; }
 .sx-layers button::before { content: ""; position: absolute; left: -1px; top: 12px; bottom: 12px; width: 3px; background: var(--accent); scale: 1 0; transition: scale .3s cubic-bezier(.2, .8, .2, 1); transform-origin: center; }
 .sx-layers button:hover { border-color: var(--muted); }
-.sx-layers button[aria-selected="true"] { translate: 10px 0; border-color: var(--ink); background: var(--ink); color: var(--paper); }
-.sx-layers button[aria-selected="true"]::before { scale: 1 1; }
+.sx-layers button[aria-selected="true"] { translate: 10px 0; border-color: var(--ink); background: var(--accent); color: var(--accent-ink); box-shadow: 5px 5px 0 var(--ink); }
+.sx-layers button[aria-selected="true"]::before { scale: 1 1; background: var(--ink); }
 .sx-n { grid-area: n; font-size: 46px; color: var(--muted); }
-.sx-layers button[aria-selected="true"] .sx-n { color: var(--accent); }
+.sx-layers button[aria-selected="true"] .sx-n { color: var(--accent-ink); }
 .sx-t { grid-area: t; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; align-self: end; }
 .sx-c { grid-area: c; font-size: 11px; color: var(--muted); align-self: start; margin-top: 2px; }
-.sx-layers button[aria-selected="true"] .sx-c { color: color-mix(in srgb, var(--paper) 65%, transparent); }
+.sx-layers button[aria-selected="true"] .sx-c { color: #34400F; }
 .sx-pips { grid-area: p; display: flex; gap: 3px; }
 .sx-pips i { width: 7px; height: 7px; background: var(--line); transition: background-color .3s; }
-.sx-layers button[aria-selected="true"] .sx-pips i { background: var(--accent); }
+.sx-layers button[aria-selected="true"] .sx-pips i { background: var(--accent-ink); }
 .sx-layers button[aria-selected="true"] .sx-pips i:nth-child(2) { transition-delay: .04s; } .sx-layers button[aria-selected="true"] .sx-pips i:nth-child(3) { transition-delay: .08s; }
 .sx-layers button[aria-selected="true"] .sx-pips i:nth-child(4) { transition-delay: .12s; } .sx-layers button[aria-selected="true"] .sx-pips i:nth-child(5) { transition-delay: .16s; }
 

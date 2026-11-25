@@ -25,6 +25,8 @@ export default function AdminCertificatesPage() {
     image_url: "",
     order_index: 0,
     is_featured: true,
+    status: "published" as "published" | "draft",
+    is_hidden: false,
   });
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -108,6 +110,8 @@ export default function AdminCertificatesPage() {
       image_url: "",
       order_index: certs.length,
       is_featured: true,
+      status: "published",
+      is_hidden: false,
     });
     setErrorMsg(null);
     setUploadError(null);
@@ -128,6 +132,8 @@ export default function AdminCertificatesPage() {
       image_url: c.image_url || "",
       order_index: c.order_index,
       is_featured: c.is_featured,
+      status: c.status === "draft" ? "draft" : "published",
+      is_hidden: c.is_hidden ?? false,
     });
     setErrorMsg(null);
     setUploadError(null);
@@ -135,19 +141,19 @@ export default function AdminCertificatesPage() {
     setModalOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const saveCert = async (targetStatus: "published" | "draft") => {
     setSaving(true);
     setErrorMsg(null);
 
     const supabase = createClient();
+    const safeTitle = form.title.trim() || "Untitled Draft";
 
     try {
       if (editingCert) {
         const { error } = await supabase
           .from("certificates")
           .update({
-            title: form.title,
+            title: safeTitle,
             issuer: form.issuer,
             year: form.year,
             valid_until: form.valid_until || null,
@@ -157,6 +163,8 @@ export default function AdminCertificatesPage() {
             image_url: form.image_url || null,
             order_index: Number(form.order_index),
             is_featured: Boolean(form.is_featured),
+            status: targetStatus,
+            is_hidden: Boolean(form.is_hidden),
             updated_at: new Date().toISOString(),
           })
           .eq("id", editingCert.id);
@@ -164,7 +172,7 @@ export default function AdminCertificatesPage() {
         if (error) throw error;
       } else {
         const { error } = await supabase.from("certificates").insert({
-          title: form.title,
+          title: safeTitle,
           issuer: form.issuer,
           year: form.year,
           valid_until: form.valid_until || null,
@@ -174,6 +182,8 @@ export default function AdminCertificatesPage() {
           image_url: form.image_url || null,
           order_index: Number(form.order_index),
           is_featured: Boolean(form.is_featured),
+          status: targetStatus,
+          is_hidden: Boolean(form.is_hidden),
         });
 
         if (error) throw error;
@@ -185,6 +195,27 @@ export default function AdminCertificatesPage() {
       setErrorMsg((err as Error).message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await saveCert("published");
+  };
+
+  const handleToggleHide = async (c: CertRow) => {
+    const supabase = createClient();
+    const nextHidden = !c.is_hidden;
+    const { error } = await supabase
+      .from("certificates")
+      .update({ is_hidden: nextHidden, updated_at: new Date().toISOString() })
+      .eq("id", c.id);
+    if (!error) {
+      setCerts((prev) =>
+        prev.map((item) => (item.id === c.id ? { ...item, is_hidden: nextHidden } : item))
+      );
+    } else {
+      alert("Error updating visibility: " + error.message);
     }
   };
 
@@ -274,7 +305,7 @@ export default function AdminCertificatesPage() {
               </thead>
               <tbody>
                 {certs.map((c, i) => (
-                  <tr key={c.id}>
+                  <tr key={c.id} style={{ opacity: c.is_hidden ? 0.55 : 1 }}>
                     <td>
                       <OrderControl
                         index={i}
@@ -285,7 +316,19 @@ export default function AdminCertificatesPage() {
                       />
                     </td>
                     <td>
-                      <b style={{ display: "block" }}>{c.title}</b>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                        <b>{c.title}</b>
+                        {c.status === "draft" && (
+                          <span className="chip mono" style={{ fontSize: "10px", padding: "2px 6px", borderStyle: "dashed" }}>
+                            DRAFT
+                          </span>
+                        )}
+                        {c.is_hidden && (
+                          <span className="chip dark mono" style={{ fontSize: "10px", padding: "2px 6px" }}>
+                            HIDDEN
+                          </span>
+                        )}
+                      </div>
                       <span className="mono small muted">{c.issuer}</span>
                     </td>
                     <td>
@@ -308,6 +351,13 @@ export default function AdminCertificatesPage() {
                     </td>
                     <td style={{ textAlign: "right" }}>
                       <div style={{ display: "inline-flex", gap: "6px" }}>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleHide(c)}
+                          className="admin-btn sm"
+                        >
+                          {c.is_hidden ? "Show" : "Hide"}
+                        </button>
                         <button
                           type="button"
                           onClick={() => openEditModal(c)}
@@ -544,6 +594,36 @@ export default function AdminCertificatesPage() {
                   </div>
                 </div>
 
+                <div
+                  style={{
+                    padding: "10px 12px",
+                    border: "1px solid var(--line)",
+                    background: "var(--paper2)",
+                    marginBottom: "14px",
+                  }}
+                >
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      cursor: "pointer",
+                      margin: 0,
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={form.is_hidden}
+                      onChange={(e) => setForm({ ...form, is_hidden: e.target.checked })}
+                      style={{ width: "16px", height: "16px", accentColor: "var(--ink)" }}
+                    />
+                    <span className="mono small bold">HIDE FROM PUBLIC WEBSITE</span>
+                    <span className="mono small muted" style={{ fontSize: "11px" }}>
+                      (Kept in database, hidden from visitors)
+                    </span>
+                  </label>
+                </div>
+
                 <div className="admin-modal-foot">
                   <button
                     type="button"
@@ -552,8 +632,16 @@ export default function AdminCertificatesPage() {
                   >
                     Cancel
                   </button>
+                  <button
+                    type="button"
+                    className="admin-btn"
+                    disabled={saving}
+                    onClick={() => saveCert("draft")}
+                  >
+                    {saving ? "Saving..." : "Save as Draft"}
+                  </button>
                   <button type="submit" className="admin-btn primary" disabled={saving}>
-                    {saving ? "Writing to database..." : editingCert ? "Commit Update" : "Insert Record"}
+                    {saving ? "Publishing..." : editingCert?.status === "draft" ? "Publish Certificate" : editingCert ? "Update & Publish" : "Publish"}
                   </button>
                 </div>
               </form>

@@ -14,7 +14,7 @@ const cond = Barlow_Condensed({ subsets: ["latin"], weight: "600", variable: "--
 
 export const metadata: Metadata = {
   title: "abim.run",
-  description: "Abim — full-stack developer working across web, mobile and machine learning. Based in Kuala Lumpur.",
+  description: "Abim — full-stack developer working across web, mobile and machine learning.",
 };
 
 // Applies a stored theme override before first paint (no flash of the wrong scheme).

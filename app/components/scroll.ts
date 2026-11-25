@@ -61,42 +61,44 @@ export function scrollToY(y: number, instant = false) {
 /** Accurately scroll to a target section by ID or selector.
  *  Handles pinned sections (top = 0) vs normal sections (offset = 80px). */
 export function scrollToTarget(target: string, instant = false) {
-  if (target === "#top" || target === "top" || target === "/") {
-    scrollToY(0, instant);
-    return;
-  }
-  const selector = target.startsWith("#") ? target : `#${target}`;
-  const el = document.querySelector(selector) as HTMLElement | null;
-  if (!el) return;
+  let top = 0;
 
-  if (lenis) {
+  if (target !== "#top" && target !== "top" && target !== "/") {
+    const selector = target.startsWith("#") ? target : `#${target}`;
+    const el = document.querySelector(selector) as HTMLElement | null;
+    if (!el) return;
+
+    if (lenis) {
+      lenis.resize();
+    }
+
+    const isPinned = el.classList.contains("is-pinned") ||
+                     el.classList.contains("about-pin") ||
+                     el.classList.contains("projects-pin") ||
+                     el.id === "about" ||
+                     el.id === "principles" ||
+                     el.id === "projects" ||
+                     el.id === "work";
+
+    // Position relative to document
+    const rect = el.getBoundingClientRect();
+    top = rect.top + window.scrollY;
+
+    // Pinned sections must land at top = 0 so their sticky containers engage properly without gaps.
+    // Other sections: "want" is where the section's top edge should sit in the viewport (negative = above it).
+    //  - shorter than the screen: centred;  - taller: its heading lands just below the navbar pill.
+    // A partial sliver of the previous section's edge strip (the lime teeth are ~26px) looks like a glitch, so never leave less than a full strip showing.
+    if (!isPinned) {
+      const vh = window.innerHeight;
+      // padding is stable; a heading's position is not (reveal animations shift it), so it is only the fallback for sections with no padding
+      const pad = parseFloat(getComputedStyle(el).paddingTop) || 0;
+      const h = el.querySelector("h1, h2");
+      let want = rect.height < vh ? (vh - rect.height) / 2 : NAV_CLEAR - (pad || (h ? h.getBoundingClientRect().top - rect.top : 0));
+      if (want > -EDGE_STRIP && want < EDGE_STRIP) want = -EDGE_STRIP;
+      top = Math.max(0, Math.round(top - want));
+    }
+  } else if (lenis) {
     lenis.resize();
-  }
-
-  const isPinned = el.classList.contains("is-pinned") ||
-                   el.classList.contains("about-pin") ||
-                   el.classList.contains("projects-pin") ||
-                   el.id === "about" ||
-                   el.id === "principles" ||
-                   el.id === "projects" ||
-                   el.id === "work";
-
-  // Position relative to document
-  const rect = el.getBoundingClientRect();
-  let top = rect.top + window.scrollY;
-
-  // Pinned sections must land at top = 0 so their sticky containers engage properly without gaps.
-  // Other sections: "want" is where the section's top edge should sit in the viewport (negative = above it).
-  //  - shorter than the screen: centred;  - taller: its heading lands just below the navbar pill.
-  // A partial sliver of the previous section's edge strip (the lime teeth are ~26px) looks like a glitch, so never leave less than a full strip showing.
-  if (!isPinned) {
-    const vh = window.innerHeight;
-    // padding is stable; a heading's position is not (reveal animations shift it), so it is only the fallback for sections with no padding
-    const pad = parseFloat(getComputedStyle(el).paddingTop) || 0;
-    const h = el.querySelector("h1, h2");
-    let want = rect.height < vh ? (vh - rect.height) / 2 : NAV_CLEAR - (pad || (h ? h.getBoundingClientRect().top - rect.top : 0));
-    if (want > -EDGE_STRIP && want < EDGE_STRIP) want = -EDGE_STRIP;
-    top = Math.max(0, Math.round(top - want));
   }
 
   if (instant) {

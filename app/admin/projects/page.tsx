@@ -6,6 +6,7 @@ import { reorderItems } from "../../../utils/supabase/reorder";
 import { optimizeImageToWebP } from "../../../utils/image";
 import OrderControl from "../components/OrderControl";
 import AdminModal from "../components/AdminModal";
+import ProjectTypeSelect from "../components/ProjectTypeSelect";
 
 type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
 
@@ -52,6 +53,8 @@ export default function AdminProjectsPage() {
     order_index: 0,
     is_featured: true,
     is_private: false,
+    status: "published" as "published" | "draft",
+    is_hidden: false,
   });
   const [newUrlInput, setNewUrlInput] = useState("");
   const [saving, setSaving] = useState(false);
@@ -215,6 +218,8 @@ export default function AdminProjectsPage() {
       order_index: projects.length,
       is_featured: true,
       is_private: false,
+      status: "published",
+      is_hidden: false,
     });
     setNewUrlInput("");
     setErrorMsg(null);
@@ -242,6 +247,8 @@ export default function AdminProjectsPage() {
       order_index: p.order_index,
       is_featured: p.is_featured,
       is_private: p.is_private ?? false,
+      status: p.status === "draft" ? "draft" : "published",
+      is_hidden: p.is_hidden ?? false,
     });
     setNewUrlInput("");
     setErrorMsg(null);
@@ -272,12 +279,15 @@ export default function AdminProjectsPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const saveProject = async (targetStatus: "published" | "draft") => {
     setSaving(true);
     setErrorMsg(null);
 
     const supabase = createClient();
+    const safeTitle = form.title.trim() || "Untitled Draft";
+    const safeSlug =
+      form.slug.trim() ||
+      `${safeTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "draft"}-${Date.now().toString().slice(-4)}`;
 
     try {
       const primaryImageUrl = form.shots[0]?.src || form.image_url || null;
@@ -287,8 +297,8 @@ export default function AdminProjectsPage() {
         const { error } = await supabase
           .from("projects")
           .update({
-            slug: form.slug,
-            title: form.title,
+            slug: safeSlug,
+            title: safeTitle,
             label: form.label,
             tagline: form.tagline,
             desc: form.desc,
@@ -304,6 +314,8 @@ export default function AdminProjectsPage() {
             order_index: Number(form.order_index),
             is_featured: Boolean(form.is_featured),
             is_private: Boolean(form.is_private),
+            status: targetStatus,
+            is_hidden: Boolean(form.is_hidden),
             updated_at: new Date().toISOString(),
           })
           .eq("id", editingProject.id);
@@ -313,8 +325,8 @@ export default function AdminProjectsPage() {
         const { data: newProj, error } = await supabase
           .from("projects")
           .insert({
-            slug: form.slug,
-            title: form.title,
+            slug: safeSlug,
+            title: safeTitle,
             label: form.label,
             tagline: form.tagline,
             desc: form.desc,
@@ -330,6 +342,8 @@ export default function AdminProjectsPage() {
             order_index: Number(form.order_index),
             is_featured: Boolean(form.is_featured),
             is_private: Boolean(form.is_private),
+            status: targetStatus,
+            is_hidden: Boolean(form.is_hidden),
           })
           .select("id")
           .single();
@@ -359,6 +373,27 @@ export default function AdminProjectsPage() {
       setErrorMsg((err as Error).message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await saveProject("published");
+  };
+
+  const handleToggleHide = async (p: ProjectRow) => {
+    const supabase = createClient();
+    const nextHidden = !p.is_hidden;
+    const { error } = await supabase
+      .from("projects")
+      .update({ is_hidden: nextHidden, updated_at: new Date().toISOString() })
+      .eq("id", p.id);
+    if (!error) {
+      setProjects((prev) =>
+        prev.map((item) => (item.id === p.id ? { ...item, is_hidden: nextHidden } : item))
+      );
+    } else {
+      alert("Error updating visibility: " + error.message);
     }
   };
 
@@ -448,7 +483,7 @@ export default function AdminProjectsPage() {
               </thead>
               <tbody>
                 {projects.map((p, i) => (
-                  <tr key={p.id}>
+                  <tr key={p.id} style={{ opacity: p.is_hidden ? 0.55 : 1 }}>
                     <td>
                       <OrderControl
                         index={i}
@@ -459,7 +494,19 @@ export default function AdminProjectsPage() {
                       />
                     </td>
                     <td>
-                      <b style={{ display: "block" }}>{p.title}</b>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                        <b>{p.title}</b>
+                        {p.status === "draft" && (
+                          <span className="chip mono" style={{ fontSize: "10px", padding: "2px 6px", borderStyle: "dashed" }}>
+                            DRAFT
+                          </span>
+                        )}
+                        {p.is_hidden && (
+                          <span className="chip dark mono" style={{ fontSize: "10px", padding: "2px 6px" }}>
+                            HIDDEN
+                          </span>
+                        )}
+                      </div>
                       <span className="mono small muted">slug: {p.slug}</span>
                       {p.image_url && (
                         <span className="mono small" style={{ display: "inline-block", marginTop: "4px", color: "var(--accent)", fontSize: "10px", fontWeight: "600" }}>
@@ -486,6 +533,13 @@ export default function AdminProjectsPage() {
                     </td>
                     <td style={{ textAlign: "right" }}>
                       <div style={{ display: "inline-flex", gap: "6px" }}>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleHide(p)}
+                          className="admin-btn sm"
+                        >
+                          {p.is_hidden ? "Show" : "Hide"}
+                        </button>
                         <button
                           type="button"
                           onClick={() => openEditModal(p)}
@@ -557,14 +611,10 @@ export default function AdminProjectsPage() {
                   </div>
 
                   <div className="admin-field">
-                    <label htmlFor="f-type">Filter Type</label>
-                    <input
-                      id="f-type"
-                      required
-                      className="mono"
+                    <label>Filter Type (Multi-select)</label>
+                    <ProjectTypeSelect
                       value={form.type}
-                      onChange={(e) => setForm({ ...form, type: e.target.value })}
-                      placeholder="web / data · ml / hardware"
+                      onChange={(next) => setForm({ ...form, type: next })}
                     />
                   </div>
                 </div>
@@ -951,6 +1001,36 @@ export default function AdminProjectsPage() {
                   </div>
                 </div>
 
+                <div
+                  style={{
+                    padding: "10px 12px",
+                    border: "1px solid var(--line)",
+                    background: "var(--paper2)",
+                    marginBottom: "14px",
+                  }}
+                >
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      cursor: "pointer",
+                      margin: 0,
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={form.is_hidden}
+                      onChange={(e) => setForm({ ...form, is_hidden: e.target.checked })}
+                      style={{ width: "16px", height: "16px", accentColor: "var(--ink)" }}
+                    />
+                    <span className="mono small bold">HIDE FROM PUBLIC WEBSITE</span>
+                    <span className="mono small muted" style={{ fontSize: "11px" }}>
+                      (Kept in database, hidden from visitors)
+                    </span>
+                  </label>
+                </div>
+
                 <div className="admin-modal-foot">
                   <button
                     type="button"
@@ -959,8 +1039,16 @@ export default function AdminProjectsPage() {
                   >
                     Cancel
                   </button>
+                  <button
+                    type="button"
+                    className="admin-btn"
+                    disabled={saving}
+                    onClick={() => saveProject("draft")}
+                  >
+                    {saving ? "Saving..." : "Save as Draft"}
+                  </button>
                   <button type="submit" className="admin-btn primary" disabled={saving}>
-                    {saving ? "Writing to database..." : editingProject ? "Commit Update" : "Insert Record"}
+                    {saving ? "Publishing..." : editingProject?.status === "draft" ? "Publish Project" : editingProject ? "Update & Publish" : "Publish"}
                   </button>
                 </div>
               </form>

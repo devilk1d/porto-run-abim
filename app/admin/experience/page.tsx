@@ -21,6 +21,8 @@ export default function AdminExperiencePage() {
     tagsStr: "web, ml",
     is_branch: false,
     order_index: 0,
+    status: "published" as "published" | "draft",
+    is_hidden: false,
   });
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -53,6 +55,8 @@ export default function AdminExperiencePage() {
       tagsStr: "web, ml, mobile",
       is_branch: false,
       order_index: experiences.length,
+      status: "published",
+      is_hidden: false,
     });
     setErrorMsg(null);
     setModalOpen(true);
@@ -68,17 +72,19 @@ export default function AdminExperiencePage() {
       tagsStr: exp.tags.join(", "),
       is_branch: exp.is_branch,
       order_index: exp.order_index,
+      status: exp.status === "draft" ? "draft" : "published",
+      is_hidden: exp.is_hidden ?? false,
     });
     setErrorMsg(null);
     setModalOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const saveExp = async (targetStatus: "published" | "draft") => {
     setSaving(true);
     setErrorMsg(null);
 
     const supabase = createClient();
+    const safeTitle = form.title.trim() || "Untitled Draft";
     const tagsArray = form.tagsStr
       .split(",")
       .map((t) => t.trim().toLowerCase())
@@ -91,11 +97,13 @@ export default function AdminExperiencePage() {
           .update({
             label: form.label,
             chapter_num: form.chapter_num,
-            title: form.title,
+            title: safeTitle,
             description: form.description,
             tags: tagsArray,
             is_branch: Boolean(form.is_branch),
             order_index: Number(form.order_index),
+            status: targetStatus,
+            is_hidden: Boolean(form.is_hidden),
             updated_at: new Date().toISOString(),
           })
           .eq("id", editingExp.id);
@@ -105,11 +113,13 @@ export default function AdminExperiencePage() {
         const { error } = await supabase.from("experiences").insert({
           label: form.label,
           chapter_num: form.chapter_num,
-          title: form.title,
+          title: safeTitle,
           description: form.description,
           tags: tagsArray,
           is_branch: Boolean(form.is_branch),
           order_index: Number(form.order_index),
+          status: targetStatus,
+          is_hidden: Boolean(form.is_hidden),
         });
 
         if (error) throw error;
@@ -121,6 +131,27 @@ export default function AdminExperiencePage() {
       setErrorMsg((err as Error).message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await saveExp("published");
+  };
+
+  const handleToggleHide = async (exp: ExpRow) => {
+    const supabase = createClient();
+    const nextHidden = !exp.is_hidden;
+    const { error } = await supabase
+      .from("experiences")
+      .update({ is_hidden: nextHidden, updated_at: new Date().toISOString() })
+      .eq("id", exp.id);
+    if (!error) {
+      setExperiences((prev) =>
+        prev.map((item) => (item.id === exp.id ? { ...item, is_hidden: nextHidden } : item))
+      );
+    } else {
+      alert("Error updating visibility: " + error.message);
     }
   };
 
@@ -210,7 +241,7 @@ export default function AdminExperiencePage() {
               </thead>
               <tbody>
                 {experiences.map((exp, i) => (
-                  <tr key={exp.id}>
+                  <tr key={exp.id} style={{ opacity: exp.is_hidden ? 0.55 : 1 }}>
                     <td>
                       <OrderControl
                         index={i}
@@ -225,7 +256,19 @@ export default function AdminExperiencePage() {
                       <span className="mono small muted">{exp.chapter_num}</span>
                     </td>
                     <td>
-                      <b style={{ display: "block" }}>{exp.title}</b>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                        <b>{exp.title}</b>
+                        {exp.status === "draft" && (
+                          <span className="chip mono" style={{ fontSize: "10px", padding: "2px 6px", borderStyle: "dashed" }}>
+                            DRAFT
+                          </span>
+                        )}
+                        {exp.is_hidden && (
+                          <span className="chip dark mono" style={{ fontSize: "10px", padding: "2px 6px" }}>
+                            HIDDEN
+                          </span>
+                        )}
+                      </div>
                       <p className="muted mono small" style={{ marginTop: "4px" }}>
                         {exp.description}
                       </p>
@@ -250,6 +293,13 @@ export default function AdminExperiencePage() {
                     </td>
                     <td style={{ textAlign: "right" }}>
                       <div style={{ display: "inline-flex", gap: "6px" }}>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleHide(exp)}
+                          className="admin-btn sm"
+                        >
+                          {exp.is_hidden ? "Show" : "Hide"}
+                        </button>
                         <button
                           type="button"
                           onClick={() => openEditModal(exp)}
@@ -367,6 +417,36 @@ export default function AdminExperiencePage() {
                   </div>
                 </div>
 
+                <div
+                  style={{
+                    padding: "10px 12px",
+                    border: "1px solid var(--line)",
+                    background: "var(--paper2)",
+                    marginBottom: "14px",
+                  }}
+                >
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      cursor: "pointer",
+                      margin: 0,
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={form.is_hidden}
+                      onChange={(e) => setForm({ ...form, is_hidden: e.target.checked })}
+                      style={{ width: "16px", height: "16px", accentColor: "var(--ink)" }}
+                    />
+                    <span className="mono small bold">HIDE FROM PUBLIC WEBSITE</span>
+                    <span className="mono small muted" style={{ fontSize: "11px" }}>
+                      (Kept in database, hidden from visitors)
+                    </span>
+                  </label>
+                </div>
+
                 <div className="admin-modal-foot">
                   <button
                     type="button"
@@ -375,8 +455,16 @@ export default function AdminExperiencePage() {
                   >
                     Cancel
                   </button>
+                  <button
+                    type="button"
+                    className="admin-btn"
+                    disabled={saving}
+                    onClick={() => saveExp("draft")}
+                  >
+                    {saving ? "Saving..." : "Save as Draft"}
+                  </button>
                   <button type="submit" className="admin-btn primary" disabled={saving}>
-                    {saving ? "Writing to database..." : editingExp ? "Commit Update" : "Insert Record"}
+                    {saving ? "Publishing..." : editingExp?.status === "draft" ? "Publish Chapter" : editingExp ? "Update & Publish" : "Publish"}
                   </button>
                 </div>
               </form>

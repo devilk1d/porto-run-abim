@@ -1,8 +1,8 @@
 // All copy comes from FigCraft page "C1 — Option C · Prototype + Components".
 
-export const GITHUB = "https://github.com/";
-export const LINKEDIN = "https://www.linkedin.com/";
-export const EMAIL = "hello@abim.run";
+export const GITHUB = "https://github.com/devilk1d/";
+export const LINKEDIN = "https://www.linkedin.com/in/ibnuabimanyu/";
+export const EMAIL = "abimanyu123em@gmail.com";
 
 export const about = [
   { k: "01 / WHO", p: "I'm Abim — a full-stack developer working across web, mobile and machine learning. I study at Management and Science University in Kuala Lumpur, and I'm originally from Indonesia.", hl: ["full-stack developer", "web, mobile and machine learning", "Indonesia"] },
@@ -37,7 +37,7 @@ export const stack = [
 
 export const stackMarquee = ["TYPESCRIPT", "NEXT.JS", "REACT", "PYTHON", "SQL", "POSTGRESQL", "SUPABASE", "NODE.JS", "SCIKIT-LEARN", "LIGHTGBM"];
 export const outputsMarquee = ["Web apps", "APIs", "Dashboards", "ML models", "Data pipelines", "Mobile apps", "IoT systems"];
-export const availableMarquee = ["OPEN TO INTERNSHIPS", "OPEN TO COLLABORATIONS", "BASED IN KUALA LUMPUR"];
+export const availableMarquee = ["OPEN TO INTERNSHIPS", "OPEN TO COLLABORATIONS", "OPEN TO REMOTE WORK", "AVAILABLE FOR FREELANCE"];
 
 export const principles = [
   { title: "It runs, or it isn't done.", body: "Every project ends with something deployed and usable — not a prototype that stalls in a folder." },

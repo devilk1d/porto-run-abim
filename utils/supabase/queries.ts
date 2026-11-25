@@ -7,21 +7,15 @@ import {
   about as defaultAbout,
   type Project,
   type Certificate,
+  type TimelineItem,
 } from "../../app/data";
+
+export type { TimelineItem };
 
 export type AboutChapter = {
   k: string;
   p: string;
   hl: string[];
-};
-
-export type TimelineItem = {
-  label: string;
-  num: string;
-  title: string;
-  desc: string;
-  tags: string[];
-  is_branch?: boolean;
 };
 
 export type AboutProfile = {

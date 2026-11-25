@@ -39,13 +39,6 @@ export const stackMarquee = ["TYPESCRIPT", "NEXT.JS", "REACT", "PYTHON", "SQL", 
 export const outputsMarquee = ["Web apps", "APIs", "Dashboards", "ML models", "Data pipelines", "Mobile apps", "IoT systems"];
 export const availableMarquee = ["OPEN TO INTERNSHIPS", "OPEN TO COLLABORATIONS", "OPEN TO REMOTE WORK", "AVAILABLE FOR FREELANCE"];
 
-export const principles = [
-  { title: "It runs, or it isn't done.", body: "Every project ends with something deployed and usable — not a prototype that stalls in a folder." },
-  { title: "Full stack, one standard.", body: "Database, API and interface built by the same hands, so the seams between them don't show." },
-  { title: "Explainable by default.", body: "From SHAP values to commit messages, I make the reasoning visible so others can trust it and build on it." },
-  { title: "Built for real users.", body: "Dashboards, models and tools designed around the person who has to use them every day." },
-];
-
 export type Project = {
   slug: string; title: string; label: string; tagline: string; desc: string;
   role: string; type: string; stack: string; fig: string;

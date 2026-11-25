@@ -2,15 +2,9 @@
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "../../../utils/supabase/client";
 import { type Database } from "../../../types/database.types";
+import { parseProjectTypes } from "../../../utils/projectTypes";
 
 type TypeRow = Database["public"]["Tables"]["project_types"]["Row"];
-
-function parseTypeString(raw: string): string[] {
-  return raw
-    .split(/[·,/]/)
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
-}
 
 export default function ProjectTypeSelect({
   value,
@@ -28,7 +22,7 @@ export default function ProjectTypeSelect({
   const [err, setErr] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const selected = parseTypeString(value);
+  const selected = parseProjectTypes(value);
 
   const fetchTypes = async () => {
     const supabase = createClient();

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "../../../utils/supabase/client";
 import { type Database } from "../../../types/database.types";
-import { reorderItems } from "../../../utils/supabase/reorder";
+import { reorderItems, swapReorderList } from "../../../utils/supabase/reorder";
 import { revalidatePortfolioCache } from "../../../utils/revalidate";
 import OrderControl from "../components/OrderControl";
 import AdminModal from "../components/AdminModal";
@@ -176,14 +176,8 @@ export default function AdminExperiencePage() {
     if (reordering) return;
     setReordering(true);
     const prev = experiences;
-    const targetIndex = direction === "up" ? index - 1 : index + 1;
-    if (targetIndex >= 0 && targetIndex < experiences.length) {
-      const swapped = [...experiences];
-      const tmp = swapped[index];
-      swapped[index] = swapped[targetIndex];
-      swapped[targetIndex] = tmp;
-      setExperiences(swapped.map((it, idx) => ({ ...it, order_index: idx })));
-    }
+    const optimistic = swapReorderList(experiences, index, direction);
+    if (optimistic) setExperiences(optimistic);
     const res = await reorderItems("experiences", prev, index, direction);
     if (res.success) {
       setExperiences(res.newItems);

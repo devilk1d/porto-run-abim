@@ -1,24 +1,11 @@
-// "ABIM." in the 5×7 block font from the design. Dot is drawn only when dotFill is set.
-const GLYPHS = [
-  [".###.", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"], // A (w: 5)
-  ["####.", "#...#", "#...#", "####.", "#...#", "#...#", "####."], // B (w: 5)
-  ["###", ".#.", ".#.", ".#.", ".#.", ".#.", "###"],               // I (w: 3)
-  ["#...#", "##.##", "#.#.#", "#.#.#", "#...#", "#...#", "#...#"], // M (w: 5)
-];
+import { ABIM_GLYPHS } from "./glyphs";
 
-const glyphs = GLYPHS.map((g) => {
+// "ABIM." in the 5×7 block font from the design. Dot is drawn only when dotFill is set.
+const glyphs = ABIM_GLYPHS.map(([x0, g]) => {
   const cells: [number, number][] = [];
   g.forEach((row, y) => [...row].forEach((c, x) => c === "#" && cells.push([x, y])));
-  return { w: g[0].length, cells };
+  return { x0, w: g[0].length, cells };
 });
-
-// Posisi [x0, y0] per huruf (ABIM.)
-const LAYOUT_INLINE: [number, number][] = [
-  [0, 0],  // A
-  [6, 0],  // B
-  [12, 0], // I
-  [16, 0], // M
-];
 
 export default function PixelName({
   fill = "currentColor",
@@ -29,7 +16,6 @@ export default function PixelName({
   dotFill?: string;
   className?: string;
 }) {
-  const layout = LAYOUT_INLINE;
   const cols = dotFill ? 23 : 21;
   const rows = 7;
   const dotPos: [number, number] = [22, 6];
@@ -43,32 +29,29 @@ export default function PixelName({
       aria-label="ABIM"
     >
       <g fill={fill}>
-        {glyphs.map((g, i) => {
-          const [x0, y0] = layout[i];
-          return (
-            <g key={i} className="glyph">
-              {/* invisible hit area so the gaps between pixels don't flicker the hover state */}
+        {glyphs.map((g, i) => (
+          <g key={i} className="glyph">
+            {/* invisible hit area so the gaps between pixels don't flicker the hover state */}
+            <rect
+              className="hit"
+              x={g.x0 * 28 - 4}
+              y={-4}
+              width={g.w * 28 + 4}
+              height={7 * 28 + 4}
+              fill="transparent"
+            />
+            {g.cells.map(([x, y]) => (
               <rect
-                className="hit"
-                x={x0 * 28 - 4}
-                y={y0 * 28 - 4}
-                width={g.w * 28 + 4}
-                height={7 * 28 + 4}
-                fill="transparent"
+                key={`${x}-${y}`}
+                x={(g.x0 + x) * 28}
+                y={y * 28}
+                width="24"
+                height="24"
+                style={{ "--d": x + y } as React.CSSProperties}
               />
-              {g.cells.map(([x, y]) => (
-                <rect
-                  key={`${x}-${y}`}
-                  x={(x0 + x) * 28}
-                  y={(y0 + y) * 28}
-                  width="24"
-                  height="24"
-                  style={{ "--d": x + y } as React.CSSProperties}
-                />
-              ))}
-            </g>
-          );
-        })}
+            ))}
+          </g>
+        ))}
       </g>
       {dotFill && (
         <rect

@@ -1,14 +1,10 @@
+import { ABIM_GLYPHS } from "./glyphs";
+
 // Hero poster: "ABIM." drawn with cells of a GitHub-style contribution grid. The other cells are a fixed pseudo-random
 // pattern (same on server and client), not real GitHub data. The name lives in columns 8–30, so narrow containers can drop the outer columns.
 const COLS = 40, ROWS = 14, X0 = 8, Y0 = 3;
-const GLYPHS: [number, string[]][] = [
-  [0, [".###.", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"]],
-  [6, ["####.", "#...#", "#...#", "####.", "#...#", "#...#", "####."]],
-  [12, ["###", ".#.", ".#.", ".#.", ".#.", ".#.", "###"]],
-  [16, ["#...#", "##.##", "#.#.#", "#.#.#", "#...#", "#...#", "#...#"]],
-];
 const NAME = new Set<number>();
-GLYPHS.forEach(([x0, g]) => g.forEach((row, y) => [...row].forEach((c, x) => c === "#" && NAME.add((Y0 + y) * COLS + X0 + x0 + x))));
+ABIM_GLYPHS.forEach(([x0, g]) => g.forEach((row, y) => [...row].forEach((c, x) => c === "#" && NAME.add((Y0 + y) * COLS + X0 + x0 + x))));
 const DOT = (Y0 + 6) * COLS + X0 + 22; // the blinking full stop
 const HOT = 2 * COLS + 32; // the cell the tooltip points at
 

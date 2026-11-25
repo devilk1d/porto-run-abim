@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react";
 import { createClient } from "../../../utils/supabase/client";
 import { type Database } from "../../../types/database.types";
-import { reorderItems } from "../../../utils/supabase/reorder";
-import { optimizeImageToWebP } from "../../../utils/image";
+import { reorderItems, swapReorderList } from "../../../utils/supabase/reorder";
+import { uploadOptimizedImage } from "../../../utils/supabase/storage";
 import { revalidatePortfolioCache } from "../../../utils/revalidate";
 import OrderControl from "../components/OrderControl";
 import AdminModal from "../components/AdminModal";
@@ -96,43 +96,21 @@ export default function AdminAboutPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      setPhotoError(`File "${file.name}" exceeds 10MB limit.`);
-      return;
-    }
-
     setPhotoUploading(true);
     setPhotoError(null);
     setPhotoSavedMsg(null);
 
     try {
-      const supabase = createClient();
-      const optimized = await optimizeImageToWebP(file, {
+      const publicUrl = await uploadOptimizedImage({
+        file,
+        bucket: "about",
+        folder: "portrait",
         maxDimension: 1200,
         quality: 0.88,
       });
-      const cleanName = file.name
-        .replace(/\.[^/.]+$/, "")
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, "-");
-      const filePath = `portrait/${Date.now()}-${cleanName}.${optimized.ext}`;
 
-      const { error: uploadErr } = await supabase.storage
-        .from("about")
-        .upload(filePath, optimized.file, {
-          upsert: true,
-          contentType: optimized.contentType,
-          cacheControl: "31536000",
-        });
-
-      if (uploadErr) throw uploadErr;
-
-      const { data: urlData } = supabase.storage
-        .from("about")
-        .getPublicUrl(filePath);
-
-      await upsertAboutProfile(urlData.publicUrl, photoAlt.trim() || "Abim portrait");
-      setPhotoUrl(urlData.publicUrl);
+      await upsertAboutProfile(publicUrl, photoAlt.trim() || "Abim portrait");
+      setPhotoUrl(publicUrl);
       setPhotoSavedMsg("Photo converted to WebP and saved to database.");
     } catch (err: unknown) {
       setPhotoError((err as Error).message || "Failed to upload About photo.");
@@ -261,14 +239,8 @@ export default function AdminAboutPage() {
     if (reordering) return;
     setReordering(true);
     const prev = chapters;
-    const targetIndex = direction === "up" ? index - 1 : index + 1;
-    if (targetIndex >= 0 && targetIndex < chapters.length) {
-      const swapped = [...chapters];
-      const tmp = swapped[index];
-      swapped[index] = swapped[targetIndex];
-      swapped[targetIndex] = tmp;
-      setChapters(swapped.map((it, idx) => ({ ...it, order_index: idx })));
-    }
+    const optimistic = swapReorderList(chapters, index, direction);
+    if (optimistic) setChapters(optimistic);
     const res = await reorderItems("about_chapters", prev, index, direction);
     if (res.success) {
       setChapters(res.newItems);

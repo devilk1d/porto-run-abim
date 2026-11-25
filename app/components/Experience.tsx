@@ -1,13 +1,6 @@
-import { timeline } from "../data";
+import { timeline, type TimelineItem } from "../data";
 
-export type TimelineItem = {
-  label: string;
-  num: string;
-  title: string;
-  desc: string;
-  tags: string[];
-  is_branch?: boolean;
-};
+export type { TimelineItem };
 
 // Short stable hex id derived from the title (decorative, like a commit hash).
 function hash(s: string) {

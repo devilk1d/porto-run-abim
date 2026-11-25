@@ -76,9 +76,7 @@ export function scrollToTarget(target: string, instant = false) {
                      el.classList.contains("about-pin") ||
                      el.classList.contains("projects-pin") ||
                      el.id === "about" ||
-                     el.id === "principles" ||
-                     el.id === "projects" ||
-                     el.id === "work";
+                     el.id === "projects";
 
     // Position relative to document
     const rect = el.getBoundingClientRect();

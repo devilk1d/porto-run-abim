@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react";
 import { createClient } from "../../../utils/supabase/client";
 import { type Database } from "../../../types/database.types";
-import { reorderItems } from "../../../utils/supabase/reorder";
-import { optimizeImageToWebP } from "../../../utils/image";
+import { reorderItems, swapReorderList } from "../../../utils/supabase/reorder";
+import { uploadOptimizedImage } from "../../../utils/supabase/storage";
 import { revalidatePortfolioCache } from "../../../utils/revalidate";
 import OrderControl from "../components/OrderControl";
 import AdminModal from "../components/AdminModal";
@@ -38,41 +38,17 @@ export default function AdminCertificatesPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      setUploadError("File size exceeds 10MB limit.");
-      return;
-    }
-
     setUploading(true);
     setUploadError(null);
 
     try {
-      const supabase = createClient();
-      const optimized = await optimizeImageToWebP(file, {
-        maxDimension: 1600,
-        quality: 0.88,
+      const publicUrl = await uploadOptimizedImage({
+        file,
+        bucket: "certificates",
+        folder: "certs",
       });
-      const cleanName = file.name
-        .replace(/\.[^/.]+$/, "")
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, "-");
-      const filePath = `certs/${Date.now()}-${cleanName}.${optimized.ext}`;
 
-      const { error: uploadErr } = await supabase.storage
-        .from("certificates")
-        .upload(filePath, optimized.file, {
-          upsert: true,
-          contentType: optimized.contentType,
-          cacheControl: "31536000",
-        });
-
-      if (uploadErr) throw uploadErr;
-
-      const { data: urlData } = supabase.storage
-        .from("certificates")
-        .getPublicUrl(filePath);
-
-      setForm((prev) => ({ ...prev, image_url: urlData.publicUrl }));
+      setForm((prev) => ({ ...prev, image_url: publicUrl }));
     } catch (err: unknown) {
       setUploadError((err as Error).message || "Failed to upload image.");
     } finally {
@@ -240,14 +216,8 @@ export default function AdminCertificatesPage() {
     if (reordering) return;
     setReordering(true);
     const prev = certs;
-    const targetIndex = direction === "up" ? index - 1 : index + 1;
-    if (targetIndex >= 0 && targetIndex < certs.length) {
-      const swapped = [...certs];
-      const tmp = swapped[index];
-      swapped[index] = swapped[targetIndex];
-      swapped[targetIndex] = tmp;
-      setCerts(swapped.map((it, idx) => ({ ...it, order_index: idx })));
-    }
+    const optimistic = swapReorderList(certs, index, direction);
+    if (optimistic) setCerts(optimistic);
     const res = await reorderItems("certificates", prev, index, direction);
     if (res.success) {
       setCerts(res.newItems);

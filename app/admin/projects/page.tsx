@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react";
 import { createClient } from "../../../utils/supabase/client";
 import { type Database } from "../../../types/database.types";
-import { reorderItems } from "../../../utils/supabase/reorder";
-import { optimizeImageToWebP } from "../../../utils/image";
+import { reorderItems, swapReorderList } from "../../../utils/supabase/reorder";
+import { uploadOptimizedImage } from "../../../utils/supabase/storage";
 import { revalidatePortfolioCache } from "../../../utils/revalidate";
 import OrderControl from "../components/OrderControl";
 import AdminModal from "../components/AdminModal";
@@ -71,40 +71,18 @@ export default function AdminProjectsPage() {
     setUploadError(null);
 
     try {
-      const supabase = createClient();
       const uploaded: ShotItem[] = [];
 
       for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        if (file.size > 10 * 1024 * 1024) {
-          throw new Error(`File "${file.name}" exceeds 10MB limit.`);
-        }
-        const optimized = await optimizeImageToWebP(file, {
-          maxDimension: 1600,
-          quality: 0.88,
+        const publicUrl = await uploadOptimizedImage({
+          file: files[i],
+          bucket: "projects",
+          folder: "shots",
+          uniquePrefix: String(i),
         });
-        const cleanName = file.name
-          .replace(/\.[^/.]+$/, "")
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, "-");
-        const filePath = `shots/${Date.now()}-${i}-${cleanName}.${optimized.ext}`;
-
-        const { error: uploadErr } = await supabase.storage
-          .from("projects")
-          .upload(filePath, optimized.file, {
-            upsert: true,
-            contentType: optimized.contentType,
-            cacheControl: "31536000",
-          });
-
-        if (uploadErr) throw uploadErr;
-
-        const { data: urlData } = supabase.storage
-          .from("projects")
-          .getPublicUrl(filePath);
 
         uploaded.push({
-          src: urlData.publicUrl,
+          src: publicUrl,
           alt: form.title || "Project screenshot",
           order_index: form.shots.length + i,
         });
@@ -418,14 +396,8 @@ export default function AdminProjectsPage() {
     if (reordering) return;
     setReordering(true);
     const prev = projects;
-    const targetIndex = direction === "up" ? index - 1 : index + 1;
-    if (targetIndex >= 0 && targetIndex < projects.length) {
-      const swapped = [...projects];
-      const tmp = swapped[index];
-      swapped[index] = swapped[targetIndex];
-      swapped[targetIndex] = tmp;
-      setProjects(swapped.map((it, idx) => ({ ...it, order_index: idx })));
-    }
+    const optimistic = swapReorderList(projects, index, direction);
+    if (optimistic) setProjects(optimistic);
     const res = await reorderItems("projects", prev, index, direction);
     if (res.success) {
       setProjects(res.newItems);

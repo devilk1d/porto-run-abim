@@ -1,18 +1,12 @@
 "use client";
 import { useState } from "react";
 import { projects, GITHUB, type Project } from "../data";
+import { parseProjectTypes } from "../../utils/projectTypes";
 import Figure from "./Figures";
 import GitHubMark from "./GitHubMark";
 import Shots from "./Shots";
 
 const pad = (n: number) => String(n).padStart(2, "0");
-
-function parseProjectTypes(raw: string): string[] {
-  return raw
-    .split(/[·,/]/)
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
-}
 
 // The project's card: screenshots (or the illustrative figure), the short text, links, and the longer write-up folded away.
 function Preview({ p, index }: { p: Project; index: number }) {

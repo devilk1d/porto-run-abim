@@ -3,7 +3,7 @@ import { createContext, useContext, useRef, useState } from "react";
 import { EMAIL } from "../data";
 
 const Ctx = createContext<{ open: () => void }>({ open: () => {} });
-export const useContactDialog = () => useContext(Ctx);
+const useContactDialog = () => useContext(Ctx);
 
 const TOPICS = ["Internship", "Collaboration", "A project", "Just saying hi"];
 

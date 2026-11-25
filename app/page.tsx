@@ -83,7 +83,6 @@ export default async function Home() {
           </div>
         </StackSection>
 
-        {/* Hidden, not deleted: "Why work with me" lives in components/Principles.tsx. To bring it back, import it and render <Principles /> here. */}
         <Projects items={projectsData} />
         <Certificates items={certificatesData} />
 

@@ -8,6 +8,23 @@ export interface ReorderableItem {
   [key: string]: unknown;
 }
 
+/** Returns a swapped and sequentially re-indexed copy of `items`, or `null` when out of bounds. */
+export function swapReorderList<T extends { order_index: number }>(
+  items: T[],
+  currentIndex: number,
+  direction: "up" | "down"
+): T[] | null {
+  const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+  if (targetIndex < 0 || targetIndex >= items.length) {
+    return null;
+  }
+
+  const swapped = [...items];
+  swapped[currentIndex] = items[targetIndex];
+  swapped[targetIndex] = items[currentIndex];
+  return swapped.map((item, idx) => ({ ...item, order_index: idx }));
+}
+
 /**
  * Reusable function to reorder items in an array and persist the new order to Supabase.
  * Swaps positions between `currentIndex` and target neighbor (`up` or `down`).
@@ -19,18 +36,14 @@ export async function reorderItems<T extends ReorderableItem>(
   currentIndex: number,
   direction: "up" | "down"
 ): Promise<{ success: boolean; newItems: T[]; error?: string }> {
-  const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
-  if (targetIndex < 0 || targetIndex >= items.length) {
+  const updatedList = swapReorderList(items, currentIndex, direction);
+  if (!updatedList) {
     return { success: false, newItems: items };
   }
 
+  const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
   const currentItem = items[currentIndex];
   const targetItem = items[targetIndex];
-
-  // Create a copy of the items array and swap
-  const swapped = [...items];
-  swapped[currentIndex] = targetItem;
-  swapped[targetIndex] = currentItem;
 
   // Normalized order index values to assign in DB
   const newCurrentOrder =
@@ -41,12 +54,6 @@ export async function reorderItems<T extends ReorderableItem>(
     targetItem.order_index !== currentItem.order_index
       ? currentItem.order_index
       : currentIndex;
-
-  // Re-assign normalized sequential order_index in state array
-  const updatedList = swapped.map((item, idx) => ({
-    ...item,
-    order_index: idx,
-  }));
 
   const supabase = createClient();
 

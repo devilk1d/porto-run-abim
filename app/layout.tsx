@@ -14,7 +14,7 @@ const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 const cond = Barlow_Condensed({ subsets: ["latin"], weight: "600", variable: "--font-cond" });
 
 export const metadata: Metadata = {
-  title: "abim.run",
+  title: "Abim - Projects",
   description: "Abim — full-stack developer working across web, mobile and machine learning.",
 };
 

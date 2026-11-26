@@ -6,7 +6,7 @@ import { ContactBlock, SiteFooter } from "../components/SiteEnd";
 import { getCertificates } from "../../utils/supabase/queries";
 
 export const metadata: Metadata = {
-  title: "All certificates — abim.run",
+  title: "All certificates - Abim",
   description: "Courses, certifications and credentials Abim has earned.",
 };
 

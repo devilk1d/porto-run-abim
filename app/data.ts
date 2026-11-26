@@ -93,7 +93,7 @@ export const projects: Project[] = [
     built: "A set of case studies covering cleaning, exploratory analysis, clustering and classification — each written up with the reasoning, not just the code.",
   },
   {
-    slug: "site", title: "abim.run", label: "WEB · PERSONAL", fig: "fig.06 — abim.run",
+    slug: "site", title: "abiem.codes", label: "WEB · PERSONAL", fig: "fig.06 — abiem.codes",
     tagline: "The site you're scrolling right now.",
     desc: "Designed in FigCraft, built with Next.js and TypeScript, with smooth scroll, motion and an admin dashboard planned.",
     role: "design + development", type: "web · portfolio", stack: "next.js · typescript · gsap · lenis",

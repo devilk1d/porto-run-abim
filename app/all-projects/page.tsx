@@ -6,7 +6,7 @@ import { ContactBlock, SiteFooter } from "../components/SiteEnd";
 import { getProjects, getProjectTypes } from "../../utils/supabase/queries";
 
 export const metadata: Metadata = {
-  title: "All projects — abim.run",
+  title: "All projects - Abim",
   description: "Every project Abim has built: web apps, ML research and hardware.",
 };
 

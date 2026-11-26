@@ -58,7 +58,7 @@ export default function Boot() {
       <div className="boot-hud boot-tl mono small">[SYS.INIT]</div>
       <div className="boot-hud boot-tr mono small">UTC+8 · ID / MY</div>
       <div className="boot-hud boot-bl mono small">PORTFOLIO</div>
-      <div className="boot-hud boot-br mono small">© 2026 abim.run</div>
+      <div className="boot-hud boot-br mono small">© 2026 abiem.codes</div>
 
       <div className="boot-core">
         <div className="boot-panel">
@@ -68,7 +68,7 @@ export default function Boot() {
               <i />
               <i />
             </span>
-            <span>~/boot/abim.run</span>
+            <span>~/boot/abiem.codes</span>
             <b className={`boot-status${ready ? " ready" : ""}`}>
               {ready ? "READY" : "LOADING"}
             </b>
